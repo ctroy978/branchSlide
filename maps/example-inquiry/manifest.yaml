@@ -1,0 +1,76 @@
+graph:
+  slug: example-inquiry
+  title: "The Trolley and the Gardener"
+  description: "A short ethical branching inquiry for classroom demonstration."
+  entry_node: start
+
+nodes:
+  - slug: start
+    title: "The Dilemma"
+    type: content
+    content: nodes/start.md
+
+  - slug: virtue-path
+    title: "Virtue Ethics"
+    type: content
+    content: nodes/virtue-path.md
+
+  - slug: consequence-path
+    title: "Consequentialism"
+    type: content
+    content: nodes/consequence-path.md
+
+  - slug: crossroads
+    title: "Where the Paths Meet"
+    type: content
+    content: nodes/crossroads.md
+
+  - slug: revisit
+    title: "Step Back"
+    type: content
+    content: nodes/revisit.md
+
+  - slug: reflection
+    title: "Deeper Reflection"
+    type: content
+    content: nodes/reflection.md
+
+  - slug: synthesis
+    title: "Synthesis"
+    type: synthesis
+    content: nodes/synthesis.md
+
+branches:
+  - from: start
+    to: virtue-path
+    label: "Explore virtue ethics"
+  - from: start
+    to: consequence-path
+    label: "Explore consequentialism"
+
+  - from: virtue-path
+    to: crossroads
+    label: "Continue"
+  - from: consequence-path
+    to: crossroads
+    label: "Continue"
+
+  - from: crossroads
+    to: revisit
+    label: "Revisit the opening question"
+  - from: crossroads
+    to: reflection
+    label: "Continue to reflection"
+  - from: crossroads
+    to: synthesis
+    label: "Jump to synthesis"
+
+  - from: revisit
+    to: start
+    label: "Return to the dilemma"
+
+  - from: reflection
+    to: synthesis
+    label: "Conclude"
+
+assets: []

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}BranchSlide — Inquiry Maps{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-6 py-12">
+    <h1 class="text-4xl font-bold mb-2">BranchSlide</h1>
+    <p class="text-slate-600 mb-8">Teacher-controlled branching inquiry system</p>
+
+    {% if graphs %}
+    <div class="space-y-4">
+        {% for graph in graphs %}
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h2 class="text-xl font-semibold mb-1">{{ graph.title }}</h2>
+            <p class="text-slate-600 mb-4">{{ graph.description }}</p>
+            <a href="/g/{{ graph.slug }}/teacher"
+               class="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                Open Teacher Panel
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-6">
+        <p class="text-amber-800">No inquiry maps loaded yet.</p>
+        <p class="text-sm text-amber-700 mt-2">
+            Run: <code class="bg-amber-100 px-1 rounded">python scripts/load_inquiry_map.py maps/example-inquiry</code>
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

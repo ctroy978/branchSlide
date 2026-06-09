@@ -1,0 +1,5 @@
+<div id="node-display">
+    <p class="text-sm uppercase tracking-wide text-slate-500 mb-2">{{ state.node.node_type }}</p>
+    <h2 class="text-2xl font-bold mb-4">{{ state.node.title }}</h2>
+    <div class="prose max-w-none">{{ state.node.html_content | safe }}</div>
+</div>

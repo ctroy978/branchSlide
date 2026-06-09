@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}{{ state.node.title }} — Projector{% endblock %}
+
+{% block body_class %}bg-slate-900 text-white min-h-screen{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col items-center justify-center px-8 py-12">
+    <div id="projector-content" class="max-w-4xl w-full text-center">
+        <p class="text-sm uppercase tracking-widest text-slate-400 mb-4">{{ state.graph_title }}</p>
+        <h1 id="node-title" class="text-5xl md:text-6xl font-bold mb-8 leading-tight">{{ state.node.title }}</h1>
+        <div id="node-body" class="prose prose-invert prose-lg max-w-none text-left mx-auto
+             [&_h1]:text-white [&_h2]:text-white [&_p]:text-slate-200 [&_li]:text-slate-200
+             [&_blockquote]:text-slate-300 [&_code]:text-indigo-200 [&_pre]:bg-slate-800">
+            {{ state.node.html_content | safe }}
+        </div>
+        {% if state.node.node_type == 'synthesis' %}
+        <p class="mt-12 text-indigo-300 text-lg font-medium">— Synthesis —</p>
+        {% endif %}
+    </div>
+    <p id="connection-status" class="fixed bottom-4 right-4 text-xs text-slate-500">Connecting…</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const wsUrl = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/g/{{ graph_slug }}/sessions/{{ session_id }}`;
+    const ws = new WebSocket(wsUrl);
+    const status = document.getElementById('connection-status');
+
+    ws.onopen = () => { status.textContent = 'Live'; status.classList.add('text-green-500'); };
+    ws.onclose = () => { status.textContent = 'Disconnected'; status.classList.add('text-red-500'); };
+
+    ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'node_changed') {
+            const node = msg.state.node;
+            document.getElementById('node-title').textContent = node.title;
+            document.getElementById('node-body').innerHTML = node.html_content;
+        }
+    };
+</script>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher — {{ state.graph_title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <p class="text-sm text-slate-500 uppercase tracking-wide">Teacher Control</p>
+            <h1 class="text-3xl font-bold">{{ state.graph_title }}</h1>
+        </div>
+        <a href="/" class="text-indigo-600 hover:underline text-sm">← All maps</a>
+    </div>
+
+    <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-8">
+        <p class="text-sm font-medium text-indigo-900 mb-1">Projector URL (share with classroom display)</p>
+        <div class="flex gap-2">
+            <input type="text" readonly value="{{ request.url.scheme }}://{{ request.url.netloc }}{{ projector_url }}"
+                   id="projector-url"
+                   class="flex-1 bg-white border border-indigo-200 rounded-lg px-3 py-2 text-sm font-mono">
+            <button onclick="navigator.clipboard.writeText(document.getElementById('projector-url').value)"
+                    class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">
+                Copy
+            </button>
+            <a href="{{ projector_url }}" target="_blank"
+               class="bg-white border border-indigo-300 text-indigo-700 px-4 py-2 rounded-lg text-sm hover:bg-indigo-100">
+                Open
+            </a>
+        </div>
+        <p class="text-xs text-indigo-700 mt-2">Session: <span id="session-id">{{ state.session_id }}</span></p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h2 class="text-lg font-semibold mb-4">Current Node</h2>
+            <div id="teacher-panel">
+                {% include "partials/node_display.html" %}
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold">Branch Choices</h2>
+                <button onclick="resetSession()"
+                        class="text-sm text-slate-500 hover:text-indigo-600">
+                    Reset to start
+                </button>
+            </div>
+            <div id="branch-area">
+                {% include "partials/branch_buttons.html" %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const graphSlug = "{{ graph_slug }}";
+    let sessionId = "{{ state.session_id }}";
+
+    function renderNode(state) {
+        document.querySelector('#teacher-panel').innerHTML = `
+            <p class="text-sm uppercase tracking-wide text-slate-500 mb-2">${state.node.node_type}</p>
+            <h2 class="text-2xl font-bold mb-4">${state.node.title}</h2>
+            <div class="prose max-w-none">${state.node.html_content}</div>`;
+    }
+
+    function renderBranches(state) {
+        const branchArea = document.querySelector('#branch-area');
+        if (state.branches.length === 0) {
+            branchArea.innerHTML = '<p class="text-slate-500 italic">No further branches — end of path.</p>';
+            return;
+        }
+        branchArea.innerHTML = '<div id="branch-buttons" class="space-y-3">' +
+            state.branches.map(b => `
+                <button onclick="selectBranch(${b.id})"
+                    class="w-full text-left bg-white border-2 border-indigo-200 hover:border-indigo-500 hover:bg-indigo-50 rounded-xl px-5 py-4 transition">
+                    <span class="font-medium text-indigo-900">${b.label}</span>
+                    <span class="block text-sm text-slate-500 mt-1">→ ${b.to_slug}</span>
+                </button>`).join('') + '</div>';
+    }
+
+    function applyState(state) {
+        sessionId = state.session_id;
+        document.getElementById('session-id').textContent = sessionId;
+        renderNode(state);
+        renderBranches(state);
+    }
+
+    async function selectBranch(branchId) {
+        await fetch(`/api/g/${graphSlug}/sessions/${sessionId}/branch`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({branch_id: branchId}),
+        });
+    }
+
+    async function resetSession() {
+        await fetch(`/api/g/${graphSlug}/sessions/${sessionId}/reset`, {method: 'POST'});
+    }
+
+    const wsUrl = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/g/${graphSlug}/sessions/${sessionId}`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'node_changed') {
+            applyState(msg.state);
+        }
+    };
+</script>
+{% endblock %}
