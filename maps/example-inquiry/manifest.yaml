@@ -89,3 +89,8 @@ assets:
     type: audio
     path: assets/dilemma-tone.wav
     alt: "Opening tone"
+  - node: start
+    type: video
+    path: assets/dilemma-intro.mp4
+    captions: assets/dilemma-intro.vtt
+    alt: "Opening segment with captions"

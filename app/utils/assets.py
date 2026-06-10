@@ -20,4 +20,12 @@ def build_asset_metadata(asset_data: dict) -> str:
     metadata: dict = {}
     if "autoplay" in asset_data:
         metadata["autoplay"] = bool(asset_data["autoplay"])
+    captions = asset_data.get("captions", "")
+    if isinstance(captions, str) and captions.strip():
+        metadata["captions"] = captions.strip()
     return json.dumps(metadata)
+
+
+def asset_captions_path(metadata: dict) -> str:
+    captions = metadata.get("captions", "")
+    return captions.strip() if isinstance(captions, str) else ""

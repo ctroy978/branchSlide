@@ -2,74 +2,77 @@
 
 Phased plan for making the framework bulletproof and media-capable. Revisit this before major feature work or first real classroom use.
 
-**Current state (PoC):** Branching engine, teacher control, branch-question sub-slides, back navigation, LAN projection, file-based maps. Ready for demos and testing one map.
+**Current state:** Branching engine, teacher control, branch-question sub-slides, back navigation, LAN projection (dual-port), file-based maps, map validation/preview, image and audio assets with teacher-triggered projector sync. Ready for classroom demos and content authoring.
 
 ---
 
-## Phase 1 — Bulletproof the classroom core
+## Phase 1 — Bulletproof the classroom core ✅
 
 **Do this before relying on it in a real lesson.**
 
-| Gap | Why it matters |
-|-----|----------------|
-| WebSocket reconnect | Projector tab refresh or Wi‑Fi blip shouldn't leave the display stuck |
-| Session survives server restart | Laptop sleep/restart mid-class shouldn't kill the session |
-| Teacher rejoin | Same session URL if the teacher panel is accidentally closed |
-| Clear error states | "Server unreachable", "Session not found" — not a blank screen |
-| Production run mode | Drop `--reload`; run with `--host 0.0.0.0` behind firewall |
-| Map reload without DB wipe | Loader upserts, but schema/content edge cases need a smooth workflow |
-
-**Start when:** "I'm using this in front of a class next week."
+| Gap | Status |
+|-----|--------|
+| WebSocket reconnect | Done |
+| Session survives server restart | Done (SQLite) |
+| Teacher rejoin | Done (bookmark URL) |
+| Clear error states | Done |
+| Production run mode | Done (`uv run main`) |
+| Map reload without DB wipe | Done (loader upserts) |
 
 ---
 
-## Phase 2 — Content authoring at scale
+## Phase 2 — Content authoring at scale ✅
 
 **Before building many maps or importing Cicero.**
 
-| Gap | Why it matters |
-|-----|----------------|
-| Authoring validation | Catch broken manifests, orphan branches, missing files at load time |
-| Map preview mode | Walk the graph without a live session |
-| Asset pipeline | Consistent folder layout, file size limits, supported formats documented |
-| Basic images end-to-end | Registry stub exists; needs tested rendering on projector |
-
-**Start when:** Authoring the second or third real map, or starting Cicero import.
+| Gap | Status |
+|-----|--------|
+| Authoring validation | Done |
+| Map preview mode | Done |
+| Asset pipeline | Done (folder layout, size limits, formats) |
+| Basic images end-to-end | Done |
 
 ---
 
-## Phase 3 — Audio
+## Phase 3 — Audio ✅
 
-**When spoken text or pronunciation matters.**
+**When spoken text or pronunciation matters without a timed visual.**
 
-The `assets` table and renderer registry already support this. Work items:
+| Item | Status |
+|------|--------|
+| `type: audio` in manifest | Done |
+| Audio renderer (HTML5 `<audio>`) | Done |
+| Teacher controls: play / pause / stop | Done |
+| Projector sync via WebSocket | Done |
+| Optional `autoplay` on slide entry | Done (teacher-triggered by default) |
 
-1. `type: audio` in manifest
-2. Audio renderer (HTML5 `<audio>` or similar)
-3. Teacher controls: play / pause / optional "push audio to projector"
-4. Decide: ambient (teacher triggers) vs autoplay on slide entry
-
-**Start when:** A map node needs heard Latin, narration, or a primary source read aloud.
-
-**Skip for now if:** The teacher reads slides live.
+**Keep audio** for audio-only slides (pronunciation, short clips, ambient tones). Not deprecated.
 
 ---
 
-## Phase 4 — Audio + image sync
+## Phase 4 — Video (synced picture + sound + captions) ✅
 
-**Only when timing between media matters.**
+**When image and speech must stay in sync, or captions are required.**
 
-This is a new content model, not just a new asset type.
+Use **embedded video only** — one file per performed slide. No separate audio+image choreography and **no manifest timeline engine**.
 
-| Approach | Complexity | Best for |
-|----------|------------|----------|
-| Embedded video (MP4 with image + audio baked in) | Low | Simple, one-file slides |
-| Manifest timeline (`sequence: [{at: 0s, show: img}, {at: 3s, play: audio}]`) | High | Precise classroom choreography |
-| Pre-built HTML slide as asset (`type: code` / `iframe`) | Medium | One-off bespoke slides |
+| Item | Status |
+|------|--------|
+| `type: video` in manifest | Done (MP4, WebM, M4V) |
+| Video renderer + WebVTT captions | Done |
+| Teacher play / pause / stop | Done (shared with audio via `/media`) |
+| Files on disk under `maps/…/assets/` | Done (50 MB default limit; not in SQLite) |
+| Authoring | Export from any editor; bake diagram + narration into one clip |
 
-**Start when:** "The image must appear *while* the audio says X" — not merely both on the same slide.
+**When to use what:**
 
-**Note:** Don't build a timeline engine until 2–3 concrete slides need it. Video or pre-authored HTML often covers 80% of cases.
+| Need | Asset type |
+|------|------------|
+| Static diagram | `image` |
+| Heard-only (no timed visual) | `audio` |
+| Narration + visuals in sync, or captions | `video` |
+
+**Start when:** A slide is a performed segment (narrated diagram, read-aloud source with visual) and accessibility matters.
 
 ---
 
@@ -91,15 +94,9 @@ This is a new content model, not just a new asset type.
 ## Recommended order
 
 ```
-Now     → demos and first map testing (current PoC)
-Next    → Phase 1 (reconnect, errors, production startup)
-Then    → Phase 2 when authoring more maps
-Audio   → Phase 3 when content demands it
-Sync    → Phase 4 only with specific slides that need it
-Scale   → Phase 5 when deployment grows beyond one classroom
+Done    → Phases 1–4 (classroom core, authoring, audio, video)
+Next    → Phase 5 when deployment grows beyond one classroom
 ```
-
-**Highest-value next step:** WebSocket reconnect + session recovery — saves you mid-lesson more than audio would.
 
 ---
 
@@ -110,7 +107,8 @@ Scale   → Phase 5 when deployment grows beyond one classroom
 - Node slots: `content`, `branch_question`
 - Branch slots: `label`, `student_label`
 - SQLite + file-based loader
-- WebSocket live sync
+- WebSocket live sync (teacher ↔ projector)
 - Teacher back navigation + display phases
+- Audio and video assets with teacher media controls
 
 See `README.md` for authoring slot reference and run instructions.

@@ -2,6 +2,7 @@ from collections.abc import Callable
 
 from app.models import Asset, Node
 from app.renderers.audio import render_audio
+from app.renderers.video import render_video
 from app.renderers.markdown import render_markdown
 
 ASSET_RENDERERS: dict[str, Callable] = {}
@@ -24,6 +25,7 @@ def render_image(asset: Asset, graph_slug: str) -> str:
 
 register_asset_renderer("image", render_image)
 register_asset_renderer("audio", render_audio)
+register_asset_renderer("video", render_video)
 
 
 def render_node(node: Node, graph_slug: str) -> str:

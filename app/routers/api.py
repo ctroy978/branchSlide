@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.routers.websocket import broadcast_audio_control, broadcast_session_state
-from app.schemas import AudioControlRequest, BranchSelectRequest, SessionState
+from app.routers.websocket import broadcast_media_control, broadcast_session_state
+from app.schemas import BranchSelectRequest, MediaControlRequest, SessionState
 from app.services.graph import GraphNotFoundError
 from app.services.session import (
     AudioAssetNotFoundError,
@@ -12,7 +12,7 @@ from app.services.session import (
     InvalidBranchError,
     InvalidPhaseError,
     SessionNotFoundError,
-    control_audio,
+    control_playback,
     create_session,
     get_session_state,
     get_session_state_by_join_code,
@@ -122,29 +122,49 @@ async def api_show_content(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
-@router.post("/g/{graph_slug}/sessions/{session_id}/audio", response_model=SessionState)
-async def api_control_audio(
+async def _api_control_media(
     graph_slug: str,
     session_id: str,
-    payload: AudioControlRequest,
+    payload: MediaControlRequest,
+    db: Session,
+) -> SessionState:
+    state, asset_id, action = control_playback(
+        db, graph_slug, session_id, payload.asset_id, payload.action
+    )
+    await broadcast_media_control(session_id, asset_id, action)
+    return state
+
+
+@router.post("/g/{graph_slug}/sessions/{session_id}/media", response_model=SessionState)
+async def api_control_media(
+    graph_slug: str,
+    session_id: str,
+    payload: MediaControlRequest,
     db: Session = Depends(get_db),
 ) -> SessionState:
     try:
-        state, asset_id, action = control_audio(
-            db, graph_slug, session_id, payload.asset_id, payload.action
-        )
-        await broadcast_audio_control(session_id, asset_id, action)
-        return state
+        return await _api_control_media(graph_slug, session_id, payload, db)
     except GraphNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except SessionNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except AudioAssetNotFoundError as exc:
+    except MediaAssetNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except InvalidPhaseError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except InvalidAudioActionError as exc:
+    except InvalidMediaActionError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/g/{graph_slug}/sessions/{session_id}/audio", response_model=SessionState)
+async def api_control_audio(
+    graph_slug: str,
+    session_id: str,
+    payload: MediaControlRequest,
+    db: Session = Depends(get_db),
+) -> SessionState:
+    """Backward-compatible alias for /media."""
+    return await api_control_media(graph_slug, session_id, payload, db)
 
 
 @router.post("/g/{graph_slug}/sessions/{session_id}/back", response_model=SessionState)

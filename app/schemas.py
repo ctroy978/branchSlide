@@ -15,15 +15,21 @@ class NodeState(BaseModel):
     node_type: str
 
 
-class AudioAssetState(BaseModel):
+class PlaybackAssetState(BaseModel):
     id: int
     label: str
+    kind: str  # audio | video
     autoplay: bool = False
 
 
-class AudioControlRequest(BaseModel):
+class MediaControlRequest(BaseModel):
     asset_id: int
     action: str  # play | pause | stop
+
+
+# Backward-compatible aliases
+AudioAssetState = PlaybackAssetState
+AudioControlRequest = MediaControlRequest
 
 
 class SessionState(BaseModel):
@@ -37,7 +43,7 @@ class SessionState(BaseModel):
     can_go_back: bool
     node: NodeState
     branches: list[BranchChoice]
-    audio_assets: list[AudioAssetState] = []
+    playback_assets: list[PlaybackAssetState] = []
 
 
 class BranchSelectRequest(BaseModel):

@@ -138,8 +138,8 @@ function createSessionSync(options) {
             const msg = JSON.parse(event.data);
             if (msg.type === 'node_changed' && msg.state) {
                 deliverState(msg.state);
-            } else if (msg.type === 'audio_control') {
-                handleAudioControl(msg);
+            } else if (msg.type === 'media_control' || msg.type === 'audio_control') {
+                handleMediaControl(msg);
             }
         };
 

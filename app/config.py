@@ -18,10 +18,13 @@ CORS_ORIGINS = os.getenv("BRANCHSLIDE_CORS_ORIGINS", "*")
 
 # Asset pipeline — folder layout: maps/{slug}/assets/
 ASSET_FOLDER_PREFIX = "assets/"
-ASSET_MAX_BYTES = int(os.getenv("BRANCHSLIDE_ASSET_MAX_BYTES", str(5 * 1024 * 1024)))
+ASSET_MAX_BYTES = int(os.getenv("BRANCHSLIDE_ASSET_MAX_BYTES", str(50 * 1024 * 1024)))
 
 ALLOWED_NODE_TYPES = frozenset({"content", "synthesis"})
 SUPPORTED_ASSET_TYPES: dict[str, frozenset[str]] = {
     "image": frozenset({".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}),
     "audio": frozenset({".mp3", ".wav", ".ogg", ".m4a", ".aac"}),
+    "video": frozenset({".mp4", ".webm", ".m4v"}),
 }
+
+PLAYABLE_ASSET_TYPES = frozenset({"audio", "video"})

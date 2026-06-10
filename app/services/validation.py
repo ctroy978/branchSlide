@@ -406,6 +406,29 @@ def validate_map(map_path: str | Path) -> list[ValidationIssue]:
         asset_path = asset_data.get("path", "")
         issues.extend(_validate_asset_file(map_dir, asset_type, asset_path, f"{prefix}.path"))
 
+        if asset_type == "video":
+            captions_path = asset_data.get("captions", "")
+            if captions_path:
+                captions_file = map_dir / captions_path
+                if not captions_file.is_file():
+                    issues.append(
+                        ValidationIssue(
+                            "error",
+                            "captions_file_missing",
+                            f"Captions file not found: {captions_path}",
+                            f"{prefix}.captions",
+                        )
+                    )
+                elif captions_file.suffix.lower() != ".vtt":
+                    issues.append(
+                        ValidationIssue(
+                            "error",
+                            "captions_format_unsupported",
+                            "Captions must be a WebVTT file (.vtt)",
+                            f"{prefix}.captions",
+                        )
+                    )
+
     return issues
 
 

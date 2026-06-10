@@ -67,7 +67,7 @@
         {% endif %}
     </div>
 
-    <div id="audio-controls" class="mb-6 hidden"></div>
+    <div id="media-controls" class="mb-6 hidden"></div>
 
     <div class="grid md:grid-cols-2 gap-8">
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -98,7 +98,7 @@
 {% block scripts %}
 <script src="/static/js/clipboard.js"></script>
 <script src="/static/js/shutdown.js"></script>
-<script src="/static/js/audio_sync.js"></script>
+<script src="/static/js/media_sync.js"></script>
 <script src="/static/js/session_sync.js"></script>
 <script>
     const graphSlug = "{{ graph_slug }}";
@@ -249,9 +249,14 @@
                 </button>`).join('') + '</div>';
     }
 
-    function renderAudioControls(state) {
-        const container = document.getElementById('audio-controls');
-        if (!state.audio_assets || state.audio_assets.length === 0 || state.display_phase !== 'content') {
+    function playbackAssets(state) {
+        return state.playback_assets || state.audio_assets || [];
+    }
+
+    function renderMediaControls(state) {
+        const container = document.getElementById('media-controls');
+        const assets = playbackAssets(state);
+        if (assets.length === 0 || state.display_phase !== 'content') {
             container.classList.add('hidden');
             container.innerHTML = '';
             return;
@@ -260,21 +265,24 @@
         container.classList.remove('hidden');
         container.innerHTML = `
             <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                <p class="text-sm font-medium text-amber-900 mb-3">Audio — play for the class</p>
+                <p class="text-sm font-medium text-amber-900 mb-3">Media — play for the class</p>
                 <div class="space-y-2">
-                    ${state.audio_assets.map(asset => `
+                    ${assets.map(asset => `
                         <div class="flex items-center justify-between gap-3 bg-white rounded-lg px-4 py-3 border border-amber-100">
-                            <span class="text-sm font-medium text-amber-950">${asset.label}</span>
+                            <div>
+                                <span class="text-sm font-medium text-amber-950">${asset.label}</span>
+                                <span class="block text-xs text-amber-700 capitalize">${asset.kind || 'audio'}</span>
+                            </div>
                             <div class="flex gap-2">
-                                <button onclick="controlAudio(${asset.id}, 'play')"
+                                <button onclick="controlMedia(${asset.id}, 'play')"
                                     class="bg-amber-600 hover:bg-amber-700 text-white text-sm px-3 py-1.5 rounded-lg">
                                     Play
                                 </button>
-                                <button onclick="controlAudio(${asset.id}, 'pause')"
+                                <button onclick="controlMedia(${asset.id}, 'pause')"
                                     class="bg-white border border-amber-300 text-amber-800 text-sm px-3 py-1.5 rounded-lg hover:bg-amber-100">
                                     Pause
                                 </button>
-                                <button onclick="controlAudio(${asset.id}, 'stop')"
+                                <button onclick="controlMedia(${asset.id}, 'stop')"
                                     class="bg-white border border-amber-300 text-amber-800 text-sm px-3 py-1.5 rounded-lg hover:bg-amber-100">
                                     Stop
                                 </button>
@@ -286,7 +294,7 @@
     }
 
     function applyState(state) {
-        stopAllAudio();
+        stopAllMedia();
         sessionId = state.session_id;
         const joinCodeEl = document.getElementById('join-code');
         if (joinCodeEl && state.join_code) {
@@ -294,7 +302,7 @@
             updateProjectorUrl(state.join_code);
         }
         renderPhaseControls(state);
-        renderAudioControls(state);
+        renderMediaControls(state);
         renderNode(state);
         renderBranches(state);
         clearError();
@@ -346,12 +354,12 @@
         await mutateSession(`/api/g/${graphSlug}/sessions/${sessionId}/reset`);
     }
 
-    async function controlAudio(assetId, action) {
-        await mutateSession(`/api/g/${graphSlug}/sessions/${sessionId}/audio`, {
+    async function controlMedia(assetId, action) {
+        await mutateSession(`/api/g/${graphSlug}/sessions/${sessionId}/media`, {
             asset_id: assetId,
             action,
         });
-        handleAudioControl({ asset_id: assetId, action });
+        handleMediaControl({ asset_id: assetId, action });
     }
 
     const sync = createSessionSync({

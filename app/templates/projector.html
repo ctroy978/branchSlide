@@ -10,6 +10,7 @@
     .projector-question .prose h1,
     .projector-question .prose h2 { color: #fbbf24; }
     .slide-image { max-height: min(50vh, 28rem); width: auto; }
+    .slide-video { max-height: min(60vh, 32rem); width: auto; background: #000; }
 </style>
 {% endblock %}
 
@@ -57,7 +58,7 @@
 
 {% block scripts %}
 <script src="/static/js/shutdown.js"></script>
-<script src="/static/js/audio_sync.js"></script>
+<script src="/static/js/media_sync.js"></script>
 <script src="/static/js/session_sync.js"></script>
 <script>
     const useJoinCode = {{ use_join_code | default(false) | tojson }};
@@ -91,7 +92,7 @@
 
     function applyProjectorState(state) {
         revealProjector();
-        stopAllAudio();
+        stopAllMedia();
 
         const node = state.node;
         const isQuestion = state.display_phase === 'branch_question';
@@ -108,7 +109,7 @@
         document.getElementById('node-body').innerHTML = node.html_content;
 
         synthesis.classList.toggle('hidden', node.node_type !== 'synthesis');
-        handleAudioAutoplay(state);
+        handleMediaAutoplay(state);
     }
 
     function showFatal(kind) {

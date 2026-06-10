@@ -10,7 +10,7 @@
 >
 > First time only: `uv sync` then `uv run python scripts/load_inquiry_map.py maps/example-inquiry`
 >
-> **Future work:** see [ROADMAP.md](ROADMAP.md) for phased plans (bulletproofing, audio, synced media).
+> **Future work:** see [ROADMAP.md](ROADMAP.md) — Phase 5 (multi-session scale). Video and audio are implemented.
 
 A generic, teacher-controlled branching inquiry framework. Teachers navigate inquiry maps in real time; students follow on a live projector view. All content is authored in files — nothing is hardcoded per map.
 
@@ -155,7 +155,8 @@ Optional media attached to a node. Rendered below the main slide content.
 | `type` | yes | Asset kind. Determines renderer. See [Asset types](#asset-types). |
 | `path` | yes | Path relative to map folder. Example: `assets/diagram.png`. |
 | `alt` | no | Accessibility text. Recommended for `type: image`; used as the audio label in teacher controls. |
-| `autoplay` | no | Audio only. If `true`, the projector plays this clip when the main slide appears. Default: teacher triggers playback. |
+| `autoplay` | no | `audio` / `video`. If `true`, the projector plays when the main slide appears. Default: teacher triggers playback. |
+| `captions` | no | `video` only. Path to a WebVTT file (`.vtt`) for closed captions on the projector. |
 
 ```yaml
 assets:
@@ -165,8 +166,13 @@ assets:
     alt: "Diagram of the trolley problem with a side track"
   - node: start
     type: audio
-    path: assets/opening-narration.mp3
-    alt: "Opening narration"
+    path: assets/opening-tone.wav
+    alt: "Opening tone"
+  - node: start
+    type: video
+    path: assets/opening-segment.mp4
+    captions: assets/opening-segment.vtt
+    alt: "Opening narration with diagram"
 ```
 
 ---
@@ -247,11 +253,11 @@ Quick reference for content authors and AI.
 | Type | Status | Purpose |
 |------|--------|---------|
 | `image` | implemented | Displayed inline below node content. |
-| `audio` | implemented | Teacher play / pause / stop; optional `autoplay` on slide entry. |
-| `video` | planned | Short clips. |
+| `audio` | implemented | Audio-only clips. Teacher play / pause / stop; optional `autoplay`. |
+| `video` | implemented | **Synced picture + sound** in one MP4; optional WebVTT captions. Teacher play / pause / stop. Files live in `maps/{slug}/assets/` (not in the database). |
 | `code` | planned | Syntax-highlighted excerpts. |
 
-Audio is teacher-controlled by default: the control panel shows play controls for each audio asset on the current main slide, and the projector plays via live sync. Set `autoplay: true` in the manifest when a clip should start as soon as the slide appears.
+**Media strategy:** Use `image` for static visuals, `audio` when sound alone is enough, and `video` when narration must stay in sync with visuals or captions are required. Audio and video are teacher-controlled by default; the projector plays via live sync.
 
 ---
 
@@ -327,7 +333,8 @@ branches:
 | `branches[].student_label` | implemented |
 | Teacher "Show question" / "Back to main slide" controls | implemented |
 | Asset type `audio` (teacher controls, optional autoplay) | implemented |
-| Asset types `video`, `code` | **planned** |
+| Asset type `video` (MP4 + optional VTT captions, teacher controls) | implemented |
+| Asset type `code` | **planned** |
 
 The example map (`maps/example-inquiry`) includes `branch_question` files at `start` and `crossroads`.
 
