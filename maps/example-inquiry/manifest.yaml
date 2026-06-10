@@ -85,3 +85,7 @@ assets:
     type: image
     path: assets/trolley-diagram.svg
     alt: "Diagram of the trolley problem with five people on the main track and one gardener on the side track"
+  - node: start
+    type: audio
+    path: assets/dilemma-tone.wav
+    alt: "Opening tone"

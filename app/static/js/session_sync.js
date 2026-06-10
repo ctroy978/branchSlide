@@ -88,6 +88,8 @@ function createSessionSync(options) {
             const msg = JSON.parse(event.data);
             if (msg.type === 'node_changed' && msg.state) {
                 onState(msg.state);
+            } else if (msg.type === 'audio_control') {
+                handleAudioControl(msg);
             }
         };
 

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.config import BASE_DIR
 from app.models import Asset, Branch, Graph, Node, Session as InquirySession
+from app.utils.assets import build_asset_metadata
 from app.services.validation import MapValidationError, assert_map_valid
 
 
@@ -208,7 +209,7 @@ def load_inquiry_map(db: Session, map_path: str | Path) -> Graph:
             )
             db.add(asset)
         asset.alt_text = asset_data.get("alt", "")
-        asset.metadata_json = asset.metadata_json or "{}"
+        asset.metadata_json = build_asset_metadata(asset_data)
         db.flush()
 
     for node_id in manifest_node_ids:

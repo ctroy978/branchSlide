@@ -154,7 +154,8 @@ Optional media attached to a node. Rendered below the main slide content.
 | `node` | yes | `slug` of the node this asset belongs to. |
 | `type` | yes | Asset kind. Determines renderer. See [Asset types](#asset-types). |
 | `path` | yes | Path relative to map folder. Example: `assets/diagram.png`. |
-| `alt` | no | Accessibility text for images. Recommended for `type: image`. |
+| `alt` | no | Accessibility text. Recommended for `type: image`; used as the audio label in teacher controls. |
+| `autoplay` | no | Audio only. If `true`, the projector plays this clip when the main slide appears. Default: teacher triggers playback. |
 
 ```yaml
 assets:
@@ -162,6 +163,10 @@ assets:
     type: image
     path: assets/trolley-diagram.png
     alt: "Diagram of the trolley problem with a side track"
+  - node: start
+    type: audio
+    path: assets/opening-narration.mp3
+    alt: "Opening narration"
 ```
 
 ---
@@ -242,11 +247,11 @@ Quick reference for content authors and AI.
 | Type | Status | Purpose |
 |------|--------|---------|
 | `image` | implemented | Displayed inline below node content. |
-| `audio` | planned | Spoken source material, pronunciation guides. |
+| `audio` | implemented | Teacher play / pause / stop; optional `autoplay` on slide entry. |
 | `video` | planned | Short clips. |
 | `code` | planned | Syntax-highlighted excerpts. |
 
-Only `image` is rendered in the current PoC. Other types are stored and ignored until their renderers exist.
+Audio is teacher-controlled by default: the control panel shows play controls for each audio asset on the current main slide, and the projector plays via live sync. Set `autoplay: true` in the manifest when a clip should start as soon as the slide appears.
 
 ---
 
@@ -321,7 +326,8 @@ branches:
 | `branch_question` sub-slide | implemented |
 | `branches[].student_label` | implemented |
 | Teacher "Show question" / "Back to main slide" controls | implemented |
-| Asset types `audio`, `video`, `code` | **planned** |
+| Asset type `audio` (teacher controls, optional autoplay) | implemented |
+| Asset types `video`, `code` | **planned** |
 
 The example map (`maps/example-inquiry`) includes `branch_question` files at `start` and `crossroads`.
 

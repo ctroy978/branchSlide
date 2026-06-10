@@ -91,3 +91,10 @@ async def broadcast_session_state(session_id: str, state: dict) -> None:
         session_id,
         {"type": "node_changed", "state": state},
     )
+
+
+async def broadcast_audio_control(session_id: str, asset_id: int, action: str) -> None:
+    await manager.broadcast(
+        session_id,
+        {"type": "audio_control", "asset_id": asset_id, "action": action},
+    )

@@ -15,6 +15,17 @@ class NodeState(BaseModel):
     node_type: str
 
 
+class AudioAssetState(BaseModel):
+    id: int
+    label: str
+    autoplay: bool = False
+
+
+class AudioControlRequest(BaseModel):
+    asset_id: int
+    action: str  # play | pause | stop
+
+
 class SessionState(BaseModel):
     session_id: str
     join_code: str
@@ -26,6 +37,7 @@ class SessionState(BaseModel):
     can_go_back: bool
     node: NodeState
     branches: list[BranchChoice]
+    audio_assets: list[AudioAssetState] = []
 
 
 class BranchSelectRequest(BaseModel):

@@ -23,4 +23,5 @@ ASSET_MAX_BYTES = int(os.getenv("BRANCHSLIDE_ASSET_MAX_BYTES", str(5 * 1024 * 10
 ALLOWED_NODE_TYPES = frozenset({"content", "synthesis"})
 SUPPORTED_ASSET_TYPES: dict[str, frozenset[str]] = {
     "image": frozenset({".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}),
+    "audio": frozenset({".mp3", ".wav", ".ogg", ".m4a", ".aac"}),
 }

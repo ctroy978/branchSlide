@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session, joinedload
 from app.models import Branch, Graph, Session as InquirySession
 from app.renderers.branch_question import render_branch_question
 from app.renderers.registry import render_node
-from app.schemas import BranchChoice, NodeState, SessionState
+from app.schemas import AudioAssetState, BranchChoice, NodeState, SessionState
+from app.utils.assets import asset_label, parse_asset_metadata
 from app.services.graph import GraphNotFoundError, get_graph_by_slug, get_node_with_assets, get_outgoing_branches
 from app.services.join_code import generate_join_code, is_valid_join_code, normalize_join_code
 
@@ -23,6 +24,14 @@ class InvalidBranchError(Exception):
 
 
 class InvalidPhaseError(Exception):
+    pass
+
+
+class AudioAssetNotFoundError(Exception):
+    pass
+
+
+class InvalidAudioActionError(Exception):
     pass
 
 
@@ -75,6 +84,24 @@ def _can_show_question(node, branches: list[Branch]) -> bool:
     return _has_branch_question(node) and len(branches) >= 2
 
 
+def _audio_assets(node, display_phase: str) -> list[AudioAssetState]:
+    if display_phase != "content":
+        return []
+    assets: list[AudioAssetState] = []
+    for asset in sorted(node.assets, key=lambda item: item.id):
+        if asset.asset_type != "audio":
+            continue
+        metadata = parse_asset_metadata(asset.metadata_json)
+        assets.append(
+            AudioAssetState(
+                id=asset.id,
+                label=asset_label(asset.path, asset.alt_text),
+                autoplay=bool(metadata.get("autoplay")),
+            )
+        )
+    return assets
+
+
 def _render_display_content(
     node, branches: list[Branch], graph_slug: str, display_phase: str
 ) -> str:
@@ -108,7 +135,27 @@ def _build_session_state(db: Session, inquiry_session: InquirySession) -> Sessio
             node_type=node.node_type,
         ),
         branches=_branch_choices(branches),
+        audio_assets=_audio_assets(node, display_phase),
     )
+
+
+def control_audio(
+    db: Session, graph_slug: str, session_id: str, asset_id: int, action: str
+) -> tuple[SessionState, int, str]:
+    action = action.strip().lower()
+    if action not in {"play", "pause", "stop"}:
+        raise InvalidAudioActionError(f"Unknown audio action '{action}'")
+
+    inquiry_session = get_session(db, graph_slug, session_id)
+    node = get_node_with_assets(db, inquiry_session.current_node_id)
+    if inquiry_session.display_phase != "content":
+        raise InvalidPhaseError("Audio is only available on the main slide")
+
+    asset = next((item for item in node.assets if item.id == asset_id), None)
+    if not asset or asset.asset_type != "audio":
+        raise AudioAssetNotFoundError(f"Audio asset {asset_id} not found on this slide")
+
+    return _build_session_state(db, inquiry_session), asset_id, action
 
 
 def create_session(db: Session, graph_slug: str) -> InquirySession:
