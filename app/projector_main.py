@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import BASE_DIR, CORS_ORIGINS, MAPS_DIR
 from app.database import init_db
-from app.routers import projector_api, projector_pages, websocket
+from app.routers import projector_api, projector_pages, shutdown, websocket
 
 projector_app = FastAPI(title="BranchSlide Projector", description="Student projector display")
 
@@ -23,6 +23,7 @@ projector_app.add_middleware(
 
 projector_app.include_router(projector_pages.router)
 projector_app.include_router(projector_api.router)
+projector_app.include_router(shutdown.router)
 projector_app.include_router(websocket.router)
 
 static_path = BASE_DIR / "app" / "static"

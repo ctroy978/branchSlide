@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import BASE_DIR, CORS_ORIGINS, MAPS_DIR
 from app.database import init_db
-from app.routers import admin, api, pages, websocket
+from app.routers import admin, api, pages, shutdown, websocket
 
 app = FastAPI(title="BranchSlide", description="Teacher-controlled branching inquiry system")
 
@@ -24,6 +24,7 @@ app.add_middleware(
 app.include_router(pages.router)
 app.include_router(api.router)
 app.include_router(admin.router)
+app.include_router(shutdown.router)
 app.include_router(websocket.router)
 
 static_path = BASE_DIR / "app" / "static"

@@ -9,6 +9,7 @@ import uvicorn
 
 from app.config import PROJECTOR_PORT, TEACHER_PORT
 from app.database import init_db
+from app.shutdown import register_shutdown
 
 
 class PortInUseError(Exception):
@@ -109,6 +110,8 @@ async def run_servers(*, reload: bool = False) -> None:
     def request_shutdown() -> None:
         teacher.should_exit = True
         projector.should_exit = True
+
+    register_shutdown(request_shutdown)
 
     for sig in (signal.SIGINT, signal.SIGTERM):
         try:

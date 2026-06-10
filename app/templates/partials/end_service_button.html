@@ -1,0 +1,10 @@
+<button type="button" onclick="endBranchSlideService()"
+        title="Stop teacher and projector servers on this computer"
+        class="fixed bottom-4 left-4 z-40 text-xs font-medium px-3 py-2 rounded-lg border transition
+               {% if end_service_dark | default(false) %}
+               bg-slate-800/90 border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white
+               {% else %}
+               bg-white/90 border-slate-300 text-slate-600 hover:bg-red-50 hover:border-red-300 hover:text-red-700
+               {% endif %}">
+    End service
+</button>

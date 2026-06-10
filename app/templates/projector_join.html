@@ -29,9 +29,12 @@
         </form>
     </div>
 </div>
+{% set end_service_dark = true %}
+{% include "partials/end_service_button.html" %}
 {% endblock %}
 
 {% block scripts %}
+<script src="/static/js/shutdown.js"></script>
 <script>
     const form = document.getElementById('join-form');
     const input = document.getElementById('join-code');

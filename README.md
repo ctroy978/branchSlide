@@ -4,7 +4,7 @@
 > ```bash
 > uv run main
 > ```
-> To stop: `uv run stop` (or Ctrl+C — if restart fails with "port already in use", run `uv run stop` first)
+> To stop: click **End service** on the teacher or projector page, or run `uv run stop` (if restart fails with "port already in use", run `uv run stop` first)
 > - **Laptop (teacher):** http://localhost:8000 → open the teacher panel
 > - **TV computer (projector):** http://localhost:8001 → enter the 4-character class code from the teacher panel
 >
