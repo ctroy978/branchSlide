@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Preview — {{ state.graph_title }}{% endblock %}
+
+{% block head %}
+<style>
+    .preview-projector .slide-image { max-height: 20rem; }
+    .preview-projector.projector-question .prose h1,
+    .preview-projector.projector-question .prose h2 { color: #b45309; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <p class="text-sm text-amber-700 uppercase tracking-wide font-medium">Map Preview</p>
+            <h1 class="text-3xl font-bold">{{ state.graph_title }}</h1>
+            <p class="text-slate-500 text-sm mt-1">Walk the graph without starting a classroom session.</p>
+        </div>
+        <div class="flex gap-3 text-sm">
+            <a href="/g/{{ graph_slug }}/teacher" class="text-indigo-600 hover:underline">Start live session →</a>
+            <a href="/" class="text-slate-500 hover:underline">← All maps</a>
+        </div>
+    </div>
+
+    <div class="mb-6 flex flex-wrap gap-3">
+        {% if back_url %}
+        <a href="{{ back_url }}"
+           class="inline-block bg-slate-600 hover:bg-slate-700 text-white font-medium px-6 py-3 rounded-xl shadow-sm transition">
+            {% if state.display_phase == 'branch_question' %}← Back to main slide{% else %}← Back{% endif %}
+        </a>
+        {% endif %}
+        {% if show_question_url %}
+        <a href="{{ show_question_url }}"
+           class="inline-block bg-amber-500 hover:bg-amber-600 text-white font-medium px-6 py-3 rounded-xl shadow-sm transition">
+            Show branch question →
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8">
+        <div class="bg-slate-900 text-white rounded-xl shadow-lg p-8 preview-projector
+             {% if state.display_phase == 'branch_question' %}projector-question{% endif %}">
+            <p class="text-sm uppercase tracking-widest mb-4
+               {% if state.display_phase == 'branch_question' %}text-amber-400{% else %}text-slate-400{% endif %}">
+                {% if state.display_phase == 'branch_question' %}Discussion{% else %}{{ state.graph_title }}{% endif %}
+            </p>
+            <h2 class="text-3xl font-bold mb-6">{{ state.node.title }}</h2>
+            <div class="prose prose-invert max-w-none
+                 [&_img]:mx-auto [&_.slide-image]:max-h-80">
+                {{ state.node.html_content | safe }}
+            </div>
+            {% if state.node.node_type == 'synthesis' %}
+            <p class="mt-8 text-indigo-300 font-medium">— Synthesis —</p>
+            {% endif %}
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h2 class="text-lg font-semibold mb-2">Navigate</h2>
+            <p class="text-xs text-slate-500 mb-4">Node: <code class="bg-slate-100 px-1 rounded">{{ state.node_slug }}</code>
+               · Phase: <code class="bg-slate-100 px-1 rounded">{{ state.display_phase }}</code></p>
+            {% if state.branches %}
+            <div class="space-y-3">
+                {% for branch in state.branches %}
+                <a href="{{ branch_links[branch.id] }}"
+                   class="block w-full text-left bg-white border-2 border-indigo-200 hover:border-indigo-500 hover:bg-indigo-50 rounded-xl px-5 py-4 transition">
+                    <span class="font-medium text-indigo-900">{{ branch.label }}</span>
+                    <span class="block text-sm text-slate-500 mt-1">→ {{ branch.to_slug }}</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-slate-500 italic">No further branches — end of path.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

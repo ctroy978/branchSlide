@@ -1,10 +1,12 @@
+import json
 from pathlib import Path
 
 import yaml
 from sqlalchemy.orm import Session
 
 from app.config import BASE_DIR
-from app.models import Asset, Branch, Graph, Node
+from app.models import Asset, Branch, Graph, Node, Session as InquirySession
+from app.services.validation import MapValidationError, assert_map_valid
 
 
 class LoaderError(Exception):
@@ -31,8 +33,30 @@ def _read_markdown(map_dir: Path, relative_path: str) -> str:
     return content_path.read_text(encoding="utf-8")
 
 
+def _session_references_node(inquiry_session: InquirySession, node_id: int) -> bool:
+    if inquiry_session.current_node_id == node_id:
+        return True
+    try:
+        history = json.loads(inquiry_session.navigation_history_json or "[]")
+    except json.JSONDecodeError:
+        return False
+    if not isinstance(history, list):
+        return False
+    return any(entry.get("node_id") == node_id for entry in history)
+
+
+def _node_referenced_by_sessions(db: Session, graph_id: int, node_id: int) -> bool:
+    sessions = db.query(InquirySession).filter(InquirySession.graph_id == graph_id).all()
+    return any(_session_references_node(session, node_id) for session in sessions)
+
+
 def load_inquiry_map(db: Session, map_path: str | Path) -> Graph:
     map_dir = _resolve_map_dir(map_path)
+    try:
+        assert_map_valid(map_dir)
+    except MapValidationError as exc:
+        raise LoaderError(str(exc)) from exc
+
     manifest = yaml.safe_load((map_dir / "manifest.yaml").read_text(encoding="utf-8"))
 
     graph_data = manifest.get("graph", {})
@@ -66,6 +90,11 @@ def load_inquiry_map(db: Session, map_path: str | Path) -> Graph:
         content_file = node_data.get("content")
         content_md = _read_markdown(map_dir, content_file) if content_file else ""
 
+        branch_question_file = node_data.get("branch_question")
+        branch_question_md = (
+            _read_markdown(map_dir, branch_question_file) if branch_question_file else ""
+        )
+
         node = (
             db.query(Node)
             .filter(Node.graph_id == graph.id, Node.slug == node_slug)
@@ -77,6 +106,7 @@ def load_inquiry_map(db: Session, map_path: str | Path) -> Graph:
 
         node.title = node_data.get("title", node_slug)
         node.content_md = content_md
+        node.branch_question_md = branch_question_md
         node.node_type = node_data.get("type", "content")
         node.sort_order = index
         db.flush()
@@ -86,6 +116,18 @@ def load_inquiry_map(db: Session, map_path: str | Path) -> Graph:
     if entry_slug not in node_slug_to_id:
         raise LoaderError(f"entry_node '{entry_slug}' not found in nodes")
     graph.entry_node_id = node_slug_to_id[entry_slug]
+
+    manifest_node_ids = set(node_slug_to_id.values())
+    for node in db.query(Node).filter(Node.graph_id == graph.id).all():
+        if node.id in manifest_node_ids:
+            continue
+        if _node_referenced_by_sessions(db, graph.id, node.id):
+            continue
+        db.query(Asset).filter(Asset.node_id == node.id).delete(synchronize_session=False)
+        db.query(Branch).filter(
+            (Branch.from_node_id == node.id) | (Branch.to_node_id == node.id)
+        ).delete(synchronize_session=False)
+        db.delete(node)
 
     existing_branches = {
         (b.from_node_id, b.to_node_id, b.label)
@@ -125,6 +167,8 @@ def load_inquiry_map(db: Session, map_path: str | Path) -> Graph:
                 label=label,
             )
             db.add(branch)
+        branch.label = label
+        branch.student_label = branch_data.get("student_label", "") or ""
         branch.sort_order = index
         db.flush()
 
@@ -136,22 +180,43 @@ def load_inquiry_map(db: Session, map_path: str | Path) -> Graph:
             Branch.label == label,
         ).delete()
 
-    node_ids = set(node_slug_to_id.values())
-    db.query(Asset).filter(Asset.node_id.in_(node_ids)).delete(synchronize_session=False)
-
+    manifest_assets: dict[int, set[tuple[str, str]]] = {}
     for asset_data in manifest.get("assets", []):
         node_slug = asset_data.get("node")
         if node_slug not in node_slug_to_id:
             raise LoaderError(f"Asset references unknown node: {node_slug}")
 
-        asset = Asset(
-            node_id=node_slug_to_id[node_slug],
-            asset_type=asset_data.get("type", "image"),
-            path=asset_data.get("path", ""),
-            alt_text=asset_data.get("alt", ""),
-            metadata_json="{}",
+        node_id = node_slug_to_id[node_slug]
+        asset_type = asset_data.get("type", "image")
+        asset_path = asset_data.get("path", "")
+        manifest_assets.setdefault(node_id, set()).add((asset_type, asset_path))
+
+        asset = (
+            db.query(Asset)
+            .filter(
+                Asset.node_id == node_id,
+                Asset.asset_type == asset_type,
+                Asset.path == asset_path,
+            )
+            .first()
         )
-        db.add(asset)
+        if not asset:
+            asset = Asset(
+                node_id=node_id,
+                asset_type=asset_type,
+                path=asset_path,
+            )
+            db.add(asset)
+        asset.alt_text = asset_data.get("alt", "")
+        asset.metadata_json = asset.metadata_json or "{}"
+        db.flush()
+
+    for node_id in manifest_node_ids:
+        allowed = manifest_assets.get(node_id, set())
+        for asset in db.query(Asset).filter(Asset.node_id == node_id).all():
+            key = (asset.asset_type, asset.path)
+            if key not in allowed:
+                db.delete(asset)
 
     db.commit()
     db.refresh(graph)

@@ -13,10 +13,16 @@
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <h2 class="text-xl font-semibold mb-1">{{ graph.title }}</h2>
             <p class="text-slate-600 mb-4">{{ graph.description }}</p>
-            <a href="/g/{{ graph.slug }}/teacher"
-               class="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
-                Open Teacher Panel
-            </a>
+            <div class="flex flex-wrap gap-3">
+                <a href="/g/{{ graph.slug }}/teacher"
+                   class="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                    Open Teacher Panel
+                </a>
+                <a href="/g/{{ graph.slug }}/preview"
+                   class="inline-block bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 transition">
+                    Preview Map
+                </a>
+            </div>
         </div>
         {% endfor %}
     </div>

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} — BranchSlide{% endblock %}
+
+{% block body_class %}bg-slate-900 text-white min-h-screen{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col items-center justify-center px-8 py-12 text-center">
+    <div class="max-w-lg w-full">
+        <p class="text-sm uppercase tracking-widest text-slate-400 mb-4">BranchSlide</p>
+        <h1 class="text-4xl font-bold mb-4">{{ title }}</h1>
+        <p class="text-slate-300 text-lg mb-8 leading-relaxed">{{ message }}</p>
+        {% if action_url and action_label %}
+        <a href="{{ action_url }}"
+           class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-3 rounded-xl transition">
+            {{ action_label }}
+        </a>
+        {% endif %}
+        {% if secondary_url and secondary_label %}
+        <a href="{{ secondary_url }}"
+           class="inline-block mt-4 text-slate-400 hover:text-white text-sm transition">
+            {{ secondary_label }}
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

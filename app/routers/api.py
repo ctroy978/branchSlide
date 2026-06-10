@@ -8,11 +8,15 @@ from app.services.graph import GraphNotFoundError
 from app.services.session import (
     BranchNotFoundError,
     InvalidBranchError,
+    InvalidPhaseError,
     SessionNotFoundError,
     create_session,
     get_session_state,
+    go_back,
     reset_session,
     select_branch,
+    show_branch_question,
+    show_content,
 )
 
 router = APIRouter(prefix="/api")
@@ -72,3 +76,49 @@ async def api_reset_session(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except SessionNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/g/{graph_slug}/sessions/{session_id}/show-question", response_model=SessionState)
+async def api_show_question(
+    graph_slug: str, session_id: str, db: Session = Depends(get_db)
+) -> SessionState:
+    try:
+        state = show_branch_question(db, graph_slug, session_id)
+        await broadcast_session_state(session_id, state.model_dump())
+        return state
+    except GraphNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except SessionNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except InvalidPhaseError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/g/{graph_slug}/sessions/{session_id}/show-content", response_model=SessionState)
+async def api_show_content(
+    graph_slug: str, session_id: str, db: Session = Depends(get_db)
+) -> SessionState:
+    try:
+        state = show_content(db, graph_slug, session_id)
+        await broadcast_session_state(session_id, state.model_dump())
+        return state
+    except GraphNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except SessionNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/g/{graph_slug}/sessions/{session_id}/back", response_model=SessionState)
+async def api_go_back(
+    graph_slug: str, session_id: str, db: Session = Depends(get_db)
+) -> SessionState:
+    try:
+        state = go_back(db, graph_slug, session_id)
+        await broadcast_session_state(session_id, state.model_dump())
+        return state
+    except GraphNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except SessionNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except InvalidPhaseError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc

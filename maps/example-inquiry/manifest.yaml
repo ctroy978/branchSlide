@@ -9,6 +9,7 @@ nodes:
     title: "The Dilemma"
     type: content
     content: nodes/start.md
+    branch_question: nodes/start-question.md
 
   - slug: virtue-path
     title: "Virtue Ethics"
@@ -24,6 +25,7 @@ nodes:
     title: "Where the Paths Meet"
     type: content
     content: nodes/crossroads.md
+    branch_question: nodes/crossroads-question.md
 
   - slug: revisit
     title: "Step Back"
@@ -44,9 +46,11 @@ branches:
   - from: start
     to: virtue-path
     label: "Explore virtue ethics"
+    student_label: "Follow the virtue ethics path — what would a person of practical wisdom do?"
   - from: start
     to: consequence-path
     label: "Explore consequentialism"
+    student_label: "Follow the consequentialist path — what outcome produces the greatest good?"
 
   - from: virtue-path
     to: crossroads
@@ -58,12 +62,15 @@ branches:
   - from: crossroads
     to: revisit
     label: "Revisit the opening question"
+    student_label: "Step back and re-examine the opening dilemma with fresh eyes"
   - from: crossroads
     to: reflection
     label: "Continue to reflection"
+    student_label: "Press deeper — what has this inquiry revealed about our moral instincts?"
   - from: crossroads
     to: synthesis
     label: "Jump to synthesis"
+    student_label: "Move to conclusions — draw together what we have learned"
 
   - from: revisit
     to: start
@@ -73,4 +80,8 @@ branches:
     to: synthesis
     label: "Conclude"
 
-assets: []
+assets:
+  - node: start
+    type: image
+    path: assets/trolley-diagram.svg
+    alt: "Diagram of the trolley problem with five people on the main track and one gardener on the side track"

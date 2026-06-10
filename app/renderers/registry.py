@@ -13,7 +13,12 @@ def register_asset_renderer(asset_type: str, renderer: Callable) -> None:
 def render_image(asset: Asset, graph_slug: str) -> str:
     src = f"/map-assets/{graph_slug}/{asset.path}"
     alt = asset.alt_text or ""
-    return f'<img src="{src}" alt="{alt}" class="mx-auto my-6 max-h-64 rounded-lg shadow-md">'
+    return (
+        f'<figure class="slide-asset slide-asset-image my-8">'
+        f'<img src="{src}" alt="{alt}" '
+        f'class="slide-image mx-auto max-w-full rounded-lg shadow-md">'
+        f"</figure>"
+    )
 
 
 register_asset_renderer("image", render_image)

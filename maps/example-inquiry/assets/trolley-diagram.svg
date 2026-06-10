@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 220" role="img" aria-label="Trolley problem diagram">
+  <rect width="640" height="220" fill="#0f172a"/>
+  <text x="320" y="28" text-anchor="middle" fill="#e2e8f0" font-family="system-ui,sans-serif" font-size="16" font-weight="600">The Trolley Problem</text>
+  <line x1="40" y1="140" x2="600" y2="140" stroke="#64748b" stroke-width="6" stroke-linecap="round"/>
+  <line x1="320" y1="140" x2="500" y2="80" stroke="#64748b" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="120" cy="140" r="18" fill="#ef4444"/>
+  <circle cx="160" cy="140" r="18" fill="#ef4444"/>
+  <circle cx="200" cy="140" r="18" fill="#ef4444"/>
+  <circle cx="240" cy="140" r="18" fill="#ef4444"/>
+  <circle cx="280" cy="140" r="18" fill="#ef4444"/>
+  <circle cx="500" cy="80" r="18" fill="#22c55e"/>
+  <rect x="300" y="118" width="40" height="44" rx="6" fill="#f59e0b"/>
+  <text x="120" y="175" text-anchor="middle" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">5 people</text>
+  <text x="500" y="115" text-anchor="middle" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">1 gardener</text>
+  <text x="320" y="200" text-anchor="middle" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">Lever diverts the trolley onto the side track</text>
+</svg>

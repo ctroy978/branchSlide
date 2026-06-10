@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Join Class — BranchSlide{% endblock %}
+
+{% block body_class %}bg-slate-900 text-white min-h-screen{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col items-center justify-center px-8 py-12 text-center">
+    <div class="max-w-md w-full">
+        <p class="text-sm uppercase tracking-widest text-slate-400 mb-4">BranchSlide Projector</p>
+        <h1 class="text-4xl font-bold mb-3">Enter class code</h1>
+        <p class="text-slate-300 mb-8">Type the 4-character code from the teacher panel.</p>
+        <form id="join-form" class="flex flex-col gap-4">
+            <input
+                id="join-code"
+                name="code"
+                type="text"
+                maxlength="4"
+                autocapitalize="characters"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="e.g. K7M2"
+                class="text-center text-4xl font-bold tracking-[0.4em] uppercase bg-slate-800 border-2 border-slate-600 focus:border-indigo-400 rounded-xl px-4 py-5 text-white outline-none"
+            >
+            <button type="submit"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-3 rounded-xl transition">
+                Connect
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const form = document.getElementById('join-form');
+    const input = document.getElementById('join-code');
+
+    input.addEventListener('input', () => {
+        input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+    });
+
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const code = input.value.trim();
+        if (code.length === 4) {
+            window.location.href = `/${code}`;
+        }
+    });
+</script>
+{% endblock %}

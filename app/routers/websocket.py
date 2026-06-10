@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.services.graph import GraphNotFoundError
-from app.services.session import SessionNotFoundError, get_session_state
+from app.services.session import SessionNotFoundError, get_session_state, get_session_state_by_join_code
 
 router = APIRouter()
 
@@ -52,6 +52,29 @@ async def session_ws(graph_slug: str, session_id: str, websocket: WebSocket) -> 
     finally:
         db.close()
 
+    await manager.connect(session_id, websocket)
+    try:
+        await websocket.send_text(
+            json.dumps({"type": "node_changed", "state": state.model_dump()})
+        )
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(session_id, websocket)
+
+
+@router.websocket("/ws/{join_code}")
+async def join_code_ws(join_code: str, websocket: WebSocket) -> None:
+    db: Session = SessionLocal()
+    try:
+        state = get_session_state_by_join_code(db, join_code)
+    except SessionNotFoundError:
+        await websocket.close(code=4404)
+        return
+    finally:
+        db.close()
+
+    session_id = state.session_id
     await manager.connect(session_id, websocket)
     try:
         await websocket.send_text(

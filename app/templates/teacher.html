@@ -12,27 +12,64 @@
         <a href="/" class="text-indigo-600 hover:underline text-sm">← All maps</a>
     </div>
 
-    <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-8">
-        <p class="text-sm font-medium text-indigo-900 mb-1">Projector URL (share with classroom display)</p>
+    <div id="error-banner" class="hidden mb-6 bg-red-50 border border-red-200 text-red-800 rounded-xl px-4 py-3 text-sm"></div>
+
+    <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-4">
+        <p class="text-sm font-medium text-indigo-900 mb-1">Projector — open on the TV computer</p>
+        {% if used_lan_fallback %}
+        <p class="text-xs text-indigo-700 mb-3">Using your network address so other computers can connect.</p>
+        {% endif %}
+        <p class="text-xs uppercase tracking-wide text-indigo-700 mb-2">Class code</p>
+        <p class="text-5xl font-bold tracking-[0.25em] text-indigo-950 mb-4" id="join-code">{{ state.join_code }}</p>
+        <p class="text-xs text-indigo-700 mb-2">Open on the projector machine (port 8001) — code must match this session:</p>
         <div class="flex gap-2">
-            <input type="text" readonly value="{{ request.url.scheme }}://{{ request.url.netloc }}{{ projector_url }}"
+            <input type="text" readonly value="{{ projector_full_url }}"
                    id="projector-url"
                    class="flex-1 bg-white border border-indigo-200 rounded-lg px-3 py-2 text-sm font-mono">
             <button onclick="navigator.clipboard.writeText(document.getElementById('projector-url').value)"
                     class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">
+                Copy URL
+            </button>
+            <button onclick="navigator.clipboard.writeText(document.getElementById('join-code').textContent)"
+                    class="bg-white border border-indigo-300 text-indigo-700 px-4 py-2 rounded-lg text-sm hover:bg-indigo-100">
+                Copy code
+            </button>
+        </div>
+    </div>
+
+    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-8">
+        <p class="text-sm font-medium text-slate-800 mb-1">Teacher panel URL (bookmark to rejoin this session)</p>
+        <p class="text-xs text-slate-500 mb-2">If you close this tab, reopen this link to continue the same class — not a new session.</p>
+        <div class="flex gap-2">
+            <input type="text" readonly value="{{ teacher_full_url }}"
+                   id="teacher-url"
+                   class="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono">
+            <button onclick="navigator.clipboard.writeText(document.getElementById('teacher-url').value)"
+                    class="bg-slate-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-slate-800">
                 Copy
             </button>
-            <a href="{{ projector_url }}" target="_blank"
-               class="bg-white border border-indigo-300 text-indigo-700 px-4 py-2 rounded-lg text-sm hover:bg-indigo-100">
-                Open
-            </a>
         </div>
-        <p class="text-xs text-indigo-700 mt-2">Session: <span id="session-id">{{ state.session_id }}</span></p>
+        <p id="connection-status" class="text-xs text-slate-500 mt-2">Connecting…</p>
+    </div>
+
+    <div id="phase-controls" class="mb-6 flex flex-wrap gap-3">
+        {% if state.can_go_back %}
+        <button onclick="goBack()" id="back-button"
+                class="bg-slate-600 hover:bg-slate-700 text-white font-medium px-6 py-3 rounded-xl shadow-sm transition">
+            ← Back
+        </button>
+        {% endif %}
+        {% if state.can_show_question and state.display_phase == 'content' %}
+        <button onclick="showQuestion()"
+                class="bg-amber-500 hover:bg-amber-600 text-white font-medium px-6 py-3 rounded-xl shadow-sm transition">
+            Show branch question to class →
+        </button>
+        {% endif %}
     </div>
 
     <div class="grid md:grid-cols-2 gap-8">
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 class="text-lg font-semibold mb-4">Current Node</h2>
+            <h2 class="text-lg font-semibold mb-4">Projector Preview</h2>
             <div id="teacher-panel">
                 {% include "partials/node_display.html" %}
             </div>
@@ -46,6 +83,7 @@
                     Reset to start
                 </button>
             </div>
+            <p class="text-xs text-slate-500 mb-3">Only you see these — select when the class is ready.</p>
             <div id="branch-area">
                 {% include "partials/branch_buttons.html" %}
             </div>
@@ -55,13 +93,78 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="/static/js/session_sync.js"></script>
 <script>
     const graphSlug = "{{ graph_slug }}";
     let sessionId = "{{ state.session_id }}";
+    const errorBanner = document.getElementById('error-banner');
+    const connectionStatus = document.getElementById('connection-status');
+
+    const STATUS_LABELS = {
+        connecting: 'Connecting…',
+        live: 'Live — projector updates in real time',
+        reconnecting: 'Reconnecting…',
+        server_unreachable: 'Server unreachable — retrying…',
+    };
+
+    function showError(message) {
+        errorBanner.textContent = message;
+        errorBanner.classList.remove('hidden');
+    }
+
+    function clearError() {
+        errorBanner.classList.add('hidden');
+    }
+
+    function setConnectionStatus(kind) {
+        connectionStatus.textContent = STATUS_LABELS[kind] || STATUS_LABELS.connecting;
+        connectionStatus.className = 'text-xs mt-2 ' + (
+            kind === 'live' ? 'text-green-600' :
+            kind === 'server_unreachable' ? 'text-red-600' :
+            kind === 'reconnecting' ? 'text-amber-600' : 'text-slate-500'
+        );
+    }
+
+    function backLabel(state) {
+        if (state.display_phase === 'branch_question') {
+            return '← Back to main slide';
+        }
+        return '← Back to previous slide';
+    }
+
+    function renderPhaseControls(state) {
+        const controls = document.getElementById('phase-controls');
+        const parts = [];
+
+        if (state.can_go_back) {
+            parts.push(`
+                <button onclick="goBack()"
+                    class="bg-slate-600 hover:bg-slate-700 text-white font-medium px-6 py-3 rounded-xl shadow-sm transition">
+                    ${backLabel(state)}
+                </button>`);
+        }
+
+        if (state.can_show_question && state.display_phase === 'content') {
+            parts.push(`
+                <button onclick="showQuestion()"
+                    class="bg-amber-500 hover:bg-amber-600 text-white font-medium px-6 py-3 rounded-xl shadow-sm transition">
+                    Show branch question to class →
+                </button>`);
+        }
+
+        controls.innerHTML = parts.join('');
+    }
 
     function renderNode(state) {
+        const phaseBadge = state.display_phase === 'branch_question'
+            ? '<span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">Branch question — students see this</span>'
+            : '<span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">Main slide</span>';
+
         document.querySelector('#teacher-panel').innerHTML = `
-            <p class="text-sm uppercase tracking-wide text-slate-500 mb-2">${state.node.node_type}</p>
+            <div class="flex items-center gap-2 mb-3">
+                <p class="text-sm uppercase tracking-wide text-slate-500">${state.node.node_type}</p>
+                ${phaseBadge}
+            </div>
             <h2 class="text-2xl font-bold mb-4">${state.node.title}</h2>
             <div class="prose max-w-none">${state.node.html_content}</div>`;
     }
@@ -83,31 +186,76 @@
 
     function applyState(state) {
         sessionId = state.session_id;
-        document.getElementById('session-id').textContent = sessionId;
+        const joinCodeEl = document.getElementById('join-code');
+        if (joinCodeEl && state.join_code) {
+            joinCodeEl.textContent = state.join_code;
+        }
+        renderPhaseControls(state);
         renderNode(state);
         renderBranches(state);
+        clearError();
+    }
+
+    async function apiPost(path, body) {
+        let response;
+        const options = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body ?? {}),
+        };
+        try {
+            response = await fetch(path, options);
+        } catch {
+            showError('Server unreachable. Check that BranchSlide is still running, then try again.');
+            throw new Error('server_unreachable');
+        }
+        if (response.status === 404) {
+            showError('Session not found. Reload the teacher panel URL to start a new session.');
+            throw new Error('session_not_found');
+        }
+        if (!response.ok) {
+            const detail = await response.json().catch(() => ({}));
+            showError(detail.detail || 'Something went wrong. Please try again.');
+            throw new Error('request_failed');
+        }
+        return response.json();
+    }
+
+    async function mutateSession(path, body) {
+        const state = await apiPost(path, body);
+        applyState(state);
     }
 
     async function selectBranch(branchId) {
-        await fetch(`/api/g/${graphSlug}/sessions/${sessionId}/branch`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({branch_id: branchId}),
-        });
+        await mutateSession(`/api/g/${graphSlug}/sessions/${sessionId}/branch`, { branch_id: branchId });
+    }
+
+    async function showQuestion() {
+        await mutateSession(`/api/g/${graphSlug}/sessions/${sessionId}/show-question`);
+    }
+
+    async function goBack() {
+        await mutateSession(`/api/g/${graphSlug}/sessions/${sessionId}/back`);
     }
 
     async function resetSession() {
-        await fetch(`/api/g/${graphSlug}/sessions/${sessionId}/reset`, {method: 'POST'});
+        await mutateSession(`/api/g/${graphSlug}/sessions/${sessionId}/reset`);
     }
 
-    const wsUrl = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/g/${graphSlug}/sessions/${sessionId}`;
-    const ws = new WebSocket(wsUrl);
+    const sync = createSessionSync({
+        graphSlug,
+        sessionId,
+        onState: applyState,
+        onStatus: setConnectionStatus,
+        onFatalError: (kind) => {
+            if (kind === 'session_not_found') {
+                showError('Session not found. Use the teacher panel URL above or start a new session from the map list.');
+            } else {
+                showError('Server unreachable. Check that BranchSlide is still running.');
+            }
+        },
+    });
 
-    ws.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        if (msg.type === 'node_changed') {
-            applyState(msg.state);
-        }
-    };
+    sync.start();
 </script>
 {% endblock %}

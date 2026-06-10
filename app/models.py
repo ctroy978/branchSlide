@@ -39,6 +39,7 @@ class Node(Base):
     slug: Mapped[str] = mapped_column(String(128))
     title: Mapped[str] = mapped_column(String(256))
     content_md: Mapped[str] = mapped_column(Text, default="")
+    branch_question_md: Mapped[str] = mapped_column(Text, default="")
     node_type: Mapped[str] = mapped_column(String(64), default="content")
     sort_order: Mapped[int] = mapped_column(default=0)
 
@@ -65,6 +66,7 @@ class Branch(Base):
     from_node_id: Mapped[int] = mapped_column(ForeignKey("nodes.id"), index=True)
     to_node_id: Mapped[int] = mapped_column(ForeignKey("nodes.id"), index=True)
     label: Mapped[str] = mapped_column(String(256))
+    student_label: Mapped[str] = mapped_column(String(256), default="")
     sort_order: Mapped[int] = mapped_column(default=0)
 
     graph: Mapped["Graph"] = relationship(back_populates="branches")
@@ -101,6 +103,9 @@ class Session(Base):
     )
     graph_id: Mapped[int] = mapped_column(ForeignKey("graphs.id"), index=True)
     current_node_id: Mapped[int] = mapped_column(ForeignKey("nodes.id"))
+    display_phase: Mapped[str] = mapped_column(String(32), default="content")
+    navigation_history_json: Mapped[str] = mapped_column(Text, default="[]")
+    join_code: Mapped[str | None] = mapped_column(String(4), unique=True, index=True)
     status: Mapped[str] = mapped_column(String(32), default="active")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
