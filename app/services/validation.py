@@ -5,6 +5,7 @@ from pathlib import Path
 import yaml
 
 from app.config import (
+    ALLOWED_NODE_LAYOUTS,
     ALLOWED_NODE_TYPES,
     ASSET_FOLDER_PREFIX,
     ASSET_MAX_BYTES,
@@ -284,8 +285,23 @@ def validate_map(map_path: str | Path) -> list[ValidationIssue]:
                 )
             )
 
+        layout = node_data.get("layout", "default")
+        if layout not in ALLOWED_NODE_LAYOUTS:
+            issues.append(
+                ValidationIssue(
+                    "error",
+                    "node_layout_invalid",
+                    f"Unknown node layout '{layout}' (allowed: {', '.join(sorted(ALLOWED_NODE_LAYOUTS))})",
+                    f"{prefix}.layout",
+                )
+            )
+
         content_file = node_data.get("content")
-        issues.extend(_check_file_exists(map_dir, content_file, f"{prefix}.content"))
+        if layout == "video":
+            if content_file:
+                issues.extend(_check_file_exists(map_dir, content_file, f"{prefix}.content"))
+        else:
+            issues.extend(_check_file_exists(map_dir, content_file, f"{prefix}.content"))
 
         branch_question_file = node_data.get("branch_question")
         if branch_question_file:
@@ -379,6 +395,8 @@ def validate_map(map_path: str | Path) -> list[ValidationIssue]:
         )
         assets_data = []
 
+    nodes_with_video_asset: set[str] = set()
+
     for index, asset_data in enumerate(assets_data):
         prefix = f"assets[{index}]"
         if not isinstance(asset_data, dict):
@@ -406,6 +424,9 @@ def validate_map(map_path: str | Path) -> list[ValidationIssue]:
         asset_path = asset_data.get("path", "")
         issues.extend(_validate_asset_file(map_dir, asset_type, asset_path, f"{prefix}.path"))
 
+        if asset_type == "video" and node_slug in node_slugs:
+            nodes_with_video_asset.add(node_slug)
+
         if asset_type == "video":
             captions_path = asset_data.get("captions", "")
             if captions_path:
@@ -428,6 +449,22 @@ def validate_map(map_path: str | Path) -> list[ValidationIssue]:
                             f"{prefix}.captions",
                         )
                     )
+
+    for node_data in nodes_data:
+        if not isinstance(node_data, dict):
+            continue
+        if node_data.get("layout") != "video":
+            continue
+        node_slug = node_data.get("slug")
+        if node_slug and node_slug not in nodes_with_video_asset:
+            issues.append(
+                ValidationIssue(
+                    "error",
+                    "video_layout_missing_asset",
+                    f"Node '{node_slug}' uses layout 'video' but has no video asset",
+                    f"nodes.{node_slug}.layout",
+                )
+            )
 
     return issues
 

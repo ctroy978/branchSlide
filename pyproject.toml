@@ -18,6 +18,9 @@ dependencies = [
 main = "app.cli:main"
 dev = "app.cli:dev"
 stop = "app.cli:stop"
+publish = "app.cli:publish"
+remove = "app.cli:remove"
+validate = "app.cli:validate"
 
 [build-system]
 requires = ["hatchling"]

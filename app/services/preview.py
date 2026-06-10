@@ -100,6 +100,7 @@ def build_preview_state(
             title=node.title,
             html_content=_render_display_content(node, branches, graph.slug, display_phase),
             node_type=node.node_type,
+            layout=node.layout,
         ),
         branches=_branch_choices(branches),
     )

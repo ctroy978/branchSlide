@@ -1,0 +1,1 @@
+Present the context for the inquiry in a few short paragraphs. The manifest `title` appears as the projector heading — keep body text concise.

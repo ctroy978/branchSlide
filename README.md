@@ -8,7 +8,7 @@
 > - **Laptop (teacher):** http://localhost:8000 → open the teacher panel
 > - **TV computer (projector):** http://localhost:8001 → enter the 4-character class code from the teacher panel
 >
-> First time only: `uv sync` then `uv run python scripts/load_inquiry_map.py maps/example-inquiry`
+> First time only: `uv sync` then `uv run publish maps/example-inquiry`
 >
 > **Future work:** see [ROADMAP.md](ROADMAP.md) — Phase 5 (multi-session scale). Video and audio are implemented.
 
@@ -46,19 +46,29 @@ maps/my-inquiry/
     └── diagram.png
 ```
 
-Load a map into the database:
+### AI authoring (Hermes)
+
+**Agent prompt:** [`prompts/hermes-map-authoring.md`](prompts/hermes-map-authoring.md)  
+**Starter skeleton:** copy `maps/_template/` to `maps/{your-slug}/`
+
+### Publish, validate, remove
 
 ```bash
-python scripts/load_inquiry_map.py maps/my-inquiry
+uv run validate maps/my-inquiry    # check manifest + files (no DB write)
+uv run publish maps/my-inquiry     # validate + load into database
+uv run remove my-inquiry           # remove from database
+uv run remove my-inquiry --delete-files   # also delete maps/my-inquiry/
 ```
 
 Or via the admin API:
 
 ```bash
-curl -X POST http://localhost:8000/api/admin/load \
-  -H "Content-Type: application/json" \
-  -d '{"path": "maps/my-inquiry"}'
+curl -X POST http://localhost:8000/api/admin/validate -H 'Content-Type: application/json' -d '{"path":"maps/my-inquiry"}'
+curl -X POST http://localhost:8000/api/admin/load -H 'Content-Type: application/json' -d '{"path":"maps/my-inquiry"}'
+curl -X DELETE 'http://localhost:8000/api/admin/maps/my-inquiry?delete_files=true'
 ```
+
+Media files stay on disk under `assets/` — they are not stored in SQLite.
 
 ---
 
@@ -96,7 +106,8 @@ Each item is one vertex in the inquiry graph.
 | `slug` | yes | Unique node identifier within this map. Referenced by branches (`from`, `to`) and `entry_node`. Stable — do not rename after publishing. |
 | `title` | yes | Projector heading for this node. Short, display-sized. Shown on both the main slide and the branch-question sub-slide. |
 | `type` | yes | Node role in the inquiry arc. Controls styling and teacher expectations. See [Node types](#node-types). |
-| `content` | yes | Path (relative to map folder) to the **main slide** Markdown file. Sets context, presents material, tells the story so far. |
+| `layout` | no | `default` (text + assets below) or `video` (projector shows only the video asset — use for performed clips). |
+| `content` | yes* | Path to the **main slide** Markdown file (*optional when `layout: video`). |
 | `branch_question` | no | Path to the **branch-question sub-slide** Markdown file. See [Display phases](#display-phases-within-a-node). If omitted, the node has only a main slide. |
 
 ```yaml

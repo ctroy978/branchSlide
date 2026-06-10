@@ -109,6 +109,7 @@ def load_inquiry_map(db: Session, map_path: str | Path) -> Graph:
         node.content_md = content_md
         node.branch_question_md = branch_question_md
         node.node_type = node_data.get("type", "content")
+        node.layout = node_data.get("layout", "default")
         node.sort_order = index
         db.flush()
         node_slug_to_id[node_slug] = node.id
@@ -182,7 +183,7 @@ def load_inquiry_map(db: Session, map_path: str | Path) -> Graph:
         ).delete()
 
     manifest_assets: dict[int, set[tuple[str, str]]] = {}
-    for asset_data in manifest.get("assets", []):
+    for asset_index, asset_data in enumerate(manifest.get("assets", [])):
         node_slug = asset_data.get("node")
         if node_slug not in node_slug_to_id:
             raise LoaderError(f"Asset references unknown node: {node_slug}")
@@ -210,6 +211,7 @@ def load_inquiry_map(db: Session, map_path: str | Path) -> Graph:
             db.add(asset)
         asset.alt_text = asset_data.get("alt", "")
         asset.metadata_json = build_asset_metadata(asset_data)
+        asset.sort_order = asset_data.get("sort_order", asset_index)
         db.flush()
 
     for node_id in manifest_node_ids:

@@ -139,6 +139,7 @@ def _build_session_state(db: Session, inquiry_session: InquirySession) -> Sessio
             title=node.title,
             html_content=_render_display_content(node, branches, graph.slug, display_phase),
             node_type=node.node_type,
+            layout=node.layout,
         ),
         branches=_branch_choices(branches),
         playback_assets=_playback_assets(node, display_phase),

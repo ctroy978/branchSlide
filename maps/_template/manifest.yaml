@@ -1,0 +1,60 @@
+graph:
+  slug: lesson-template
+  title: "Lesson template — replace me"
+  description: "Starter graph for Hermes-authored BranchSlide maps."
+  entry_node: opening
+
+nodes:
+  - slug: opening
+    title: "Opening"
+    type: content
+    layout: default
+    content: nodes/opening.md
+    branch_question: nodes/opening-question.md
+
+  - slug: opening-clip
+    title: "Opening clip"
+    type: content
+    layout: video
+    content: nodes/opening-clip.md
+
+  - slug: path-a
+    title: "Path A"
+    type: content
+    content: nodes/path-a.md
+
+  - slug: path-b
+    title: "Path B"
+    type: content
+    content: nodes/path-b.md
+
+  - slug: synthesis
+    title: "Synthesis"
+    type: synthesis
+    content: nodes/synthesis.md
+
+branches:
+  - from: opening
+    to: opening-clip
+    label: "Play opening segment"
+  - from: opening-clip
+    to: path-a
+    label: "Continue to path A"
+  - from: opening
+    to: path-b
+    label: "Skip to path B"
+    student_label: "Move directly to the second line of argument"
+  - from: path-a
+    to: synthesis
+    label: "Conclude"
+  - from: path-b
+    to: synthesis
+    label: "Conclude"
+
+assets:
+  - node: opening-clip
+    type: video
+    path: assets/opening-clip.mp4
+    captions: assets/opening-clip.vtt
+    alt: "Opening video segment"
+    sort_order: 0

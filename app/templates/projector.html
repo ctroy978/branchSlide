@@ -11,6 +11,10 @@
     .projector-question .prose h2 { color: #fbbf24; }
     .slide-image { max-height: min(50vh, 28rem); width: auto; }
     .slide-video { max-height: min(60vh, 32rem); width: auto; background: #000; }
+    .projector-video-slide #node-title,
+    .projector-video-slide #phase-label,
+    .projector-video-slide #synthesis-marker { display: none; }
+    .projector-video-slide .slide-video { max-height: min(85vh, 48rem); width: 100%; }
 </style>
 {% endblock %}
 
@@ -105,10 +109,13 @@
         phaseLabel.className = 'text-sm uppercase tracking-widest mb-4 ' +
             (isQuestion ? 'text-amber-400' : 'text-slate-400');
 
+        const isVideoSlide = node.layout === 'video' && state.display_phase === 'content';
+        document.getElementById('projector-shell').classList.toggle('projector-video-slide', isVideoSlide);
+
         document.getElementById('node-title').textContent = node.title;
         document.getElementById('node-body').innerHTML = node.html_content;
 
-        synthesis.classList.toggle('hidden', node.node_type !== 'synthesis');
+        synthesis.classList.toggle('hidden', node.node_type !== 'synthesis' || isVideoSlide);
         handleMediaAutoplay(state);
     }
 

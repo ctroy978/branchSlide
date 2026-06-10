@@ -21,6 +21,7 @@ ASSET_FOLDER_PREFIX = "assets/"
 ASSET_MAX_BYTES = int(os.getenv("BRANCHSLIDE_ASSET_MAX_BYTES", str(50 * 1024 * 1024)))
 
 ALLOWED_NODE_TYPES = frozenset({"content", "synthesis"})
+ALLOWED_NODE_LAYOUTS = frozenset({"default", "video"})
 SUPPORTED_ASSET_TYPES: dict[str, frozenset[str]] = {
     "image": frozenset({".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}),
     "audio": frozenset({".mp3", ".wav", ".ogg", ".m4a", ".aac"}),

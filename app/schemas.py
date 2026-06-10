@@ -13,6 +13,7 @@ class NodeState(BaseModel):
     title: str
     html_content: str
     node_type: str
+    layout: str = "default"
 
 
 class PlaybackAssetState(BaseModel):

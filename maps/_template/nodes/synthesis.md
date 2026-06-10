@@ -1,0 +1,1 @@
+Draw together what the class explored. This node uses `type: synthesis`.

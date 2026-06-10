@@ -11,6 +11,12 @@ nodes:
     content: nodes/start.md
     branch_question: nodes/start-question.md
 
+  - slug: opening-segment
+    title: "Opening segment"
+    type: content
+    layout: video
+    content: nodes/opening-segment.md
+
   - slug: virtue-path
     title: "Virtue Ethics"
     type: content
@@ -43,6 +49,12 @@ nodes:
     content: nodes/synthesis.md
 
 branches:
+  - from: start
+    to: opening-segment
+    label: "Watch opening segment"
+  - from: opening-segment
+    to: start
+    label: "Return to the dilemma"
   - from: start
     to: virtue-path
     label: "Explore virtue ethics"
@@ -89,7 +101,7 @@ assets:
     type: audio
     path: assets/dilemma-tone.wav
     alt: "Opening tone"
-  - node: start
+  - node: opening-segment
     type: video
     path: assets/dilemma-intro.mp4
     captions: assets/dilemma-intro.vtt

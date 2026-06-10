@@ -49,6 +49,8 @@ def migrate_schema() -> None:
         "navigation_history_json TEXT DEFAULT '[]'",
     )
     _add_column_if_missing("sessions", "join_code", "join_code VARCHAR(4)")
+    _add_column_if_missing("nodes", "layout", "layout VARCHAR(32) DEFAULT 'default'")
+    _add_column_if_missing("assets", "sort_order", "sort_order INTEGER DEFAULT 0")
 
 
 def _backfill_join_codes() -> None:

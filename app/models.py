@@ -41,6 +41,7 @@ class Node(Base):
     content_md: Mapped[str] = mapped_column(Text, default="")
     branch_question_md: Mapped[str] = mapped_column(Text, default="")
     node_type: Mapped[str] = mapped_column(String(64), default="content")
+    layout: Mapped[str] = mapped_column(String(32), default="default")
     sort_order: Mapped[int] = mapped_column(default=0)
 
     graph: Mapped["Graph"] = relationship(
@@ -89,6 +90,7 @@ class Asset(Base):
     path: Mapped[str] = mapped_column(String(512))
     alt_text: Mapped[str] = mapped_column(String(256), default="")
     metadata_json: Mapped[str] = mapped_column(Text, default="{}")
+    sort_order: Mapped[int] = mapped_column(default=0)
 
     node: Mapped["Node"] = relationship(back_populates="assets")
 

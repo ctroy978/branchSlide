@@ -28,9 +28,27 @@ register_asset_renderer("audio", render_audio)
 register_asset_renderer("video", render_video)
 
 
+def _sorted_assets(node: Node) -> list[Asset]:
+    return sorted(node.assets, key=lambda asset: (asset.sort_order, asset.id))
+
+
 def render_node(node: Node, graph_slug: str) -> str:
-    parts = [render_markdown(node.content_md)]
-    for asset in sorted(node.assets, key=lambda a: a.id):
+    assets = _sorted_assets(node)
+
+    if node.layout == "video":
+        parts = [
+            renderer(asset, graph_slug)
+            for asset in assets
+            if asset.asset_type == "video"
+            for renderer in [ASSET_RENDERERS.get(asset.asset_type)]
+            if renderer
+        ]
+        return "\n".join(parts)
+
+    parts = []
+    if node.content_md.strip():
+        parts.append(render_markdown(node.content_md))
+    for asset in assets:
         renderer = ASSET_RENDERERS.get(asset.asset_type)
         if renderer:
             parts.append(renderer(asset, graph_slug))
