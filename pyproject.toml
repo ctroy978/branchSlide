@@ -18,7 +18,9 @@ dependencies = [
 main = "app.cli:main"
 dev = "app.cli:dev"
 stop = "app.cli:stop"
+help = "app.cli:help_cmd"
 publish = "app.cli:publish"
+list = "app.cli:list_maps"
 remove = "app.cli:remove"
 validate = "app.cli:validate"
 

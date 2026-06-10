@@ -5,8 +5,8 @@
 > uv run main
 > ```
 > To stop: click **End service** on the teacher or projector page, or run `uv run stop` (if restart fails with "port already in use", run `uv run stop` first)
-> - **Laptop (teacher):** http://localhost:8000 → open the teacher panel
-> - **TV computer (projector):** http://localhost:8001 → enter the 4-character class code from the teacher panel
+> - **Laptop (teacher):** http://localhost:8000 → open the teacher panel (do not use `http://0.0.0.0:8000` — that breaks the projector share URL)
+> - **TV computer (projector):** copy the full projector URL from the teacher panel (e.g. `http://192.168.x.x:8001/ABCD`)
 >
 > First time only: `uv sync` then `uv run publish maps/example-inquiry`
 >

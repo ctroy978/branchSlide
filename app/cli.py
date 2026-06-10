@@ -2,10 +2,53 @@ import sys
 
 from app.database import SessionLocal, init_db
 from app.launcher import main_entry, stop_servers
-from app.services.graph import GraphNotFoundError
+from app.services.graph import GraphNotFoundError, list_graphs
 from app.services.loader import LoaderError
 from app.services.maps import MapRemoveError, publish_map, remove_map
 from app.services.validation import MapValidationError, format_validation_report, validate_map
+
+HELP_TEXT = """\
+BranchSlide — command reference
+
+  Run class
+    uv run main              Start teacher (8000) + projector (8001) servers
+    uv run stop              Stop both servers
+    uv run dev               Same as main (alias)
+
+  Install a lesson (from repo root)
+    unzip lesson.zip -d maps/     If zip paths start with my-lesson/...
+    unzip lesson.zip -d .         If zip paths start with maps/my-lesson/...
+    uv run validate maps/<slug>   Check manifest and files (no DB write)
+    uv run publish maps/<slug>    Validate + load into database
+
+  Manage loaded lessons
+    uv run list                Show published slugs and titles
+    uv run remove <slug>       Remove from database (keeps maps/<slug>/ folder)
+    uv run remove <slug> --delete-files
+                               Also delete maps/<slug>/ when under maps/
+    uv run remove <slug> --force
+                               Remove even if a class session is active
+
+  Other
+    uv run help                Show this menu
+    uv sync                    Install/update Python deps (first time setup)
+
+  In class
+    Teacher:   http://localhost:8000  (not http://0.0.0.0:8000)
+    Projector: copy full URL from teacher panel (e.g. http://192.168.x.x:8001/ABCD)
+
+  Typical workflow
+    uv run list
+    unzip ~/Downloads/my-lesson.zip -d maps/
+    uv run validate maps/my-lesson
+    uv run publish maps/my-lesson
+    uv run main
+"""
+
+
+def help_cmd() -> None:
+    """Print BranchSlide CLI command reference."""
+    print(HELP_TEXT)
 
 
 def main() -> None:
@@ -27,6 +70,7 @@ def publish() -> None:
     """Validate and publish a map folder into the database."""
     if len(sys.argv) < 2:
         print("Usage: uv run publish maps/my-lesson")
+        print("  See: uv run help")
         sys.exit(1)
 
     init_db()
@@ -43,6 +87,30 @@ def publish() -> None:
         db.close()
 
 
+def list_maps() -> None:
+    """List inquiry maps loaded in the database."""
+    init_db()
+    db = SessionLocal()
+    try:
+        graphs = list_graphs(db)
+    finally:
+        db.close()
+
+    if not graphs:
+        print("No inquiry maps loaded.")
+        print("  Publish one: uv run publish maps/my-lesson")
+        sys.exit(0)
+
+    slug_width = max(len(graph.slug) for graph in graphs)
+    slug_width = max(slug_width, len("slug"))
+
+    print(f"{'slug'.ljust(slug_width)}  title")
+    for graph in graphs:
+        print(f"{graph.slug.ljust(slug_width)}  {graph.title}")
+    print(f"\n{len(graphs)} map(s) loaded.")
+    print("  Remove: uv run remove <slug> [--delete-files]")
+
+
 def remove() -> None:
     """Remove a map from the database."""
     delete_files = "--delete-files" in sys.argv
@@ -50,6 +118,7 @@ def remove() -> None:
     args = [arg for arg in sys.argv[1:] if not arg.startswith("--")]
     if len(args) != 1:
         print("Usage: uv run remove <slug> [--delete-files] [--force]")
+        print("  See: uv run help")
         sys.exit(1)
 
     init_db()
@@ -73,6 +142,7 @@ def validate() -> None:
     """Validate a map folder without loading it."""
     if len(sys.argv) < 2:
         print("Usage: uv run validate maps/my-lesson")
+        print("  See: uv run help")
         sys.exit(1)
 
     try:

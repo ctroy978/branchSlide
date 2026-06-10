@@ -10,6 +10,29 @@ You are authoring a **branching classroom presentation** for BranchSlide. Your d
 
 ---
 
+## Headless agent setup
+
+If you are **not** already inside the BranchSlide repository (e.g. you run on a remote server), do this first:
+
+1. **Clone the repo**
+   ```bash
+   git clone https://github.com/ctroy978/branchSlide.git
+   cd branchSlide
+   ```
+2. **Read this file** (`HERMES.md`) and skim `maps/example-inquiry/` for a working manifest.
+3. **Copy the template** (do not ask the teacher to send it):
+   ```bash
+   cp -r maps/_template maps/{your-slug}/
+   ```
+4. **Install tooling** (for validate/publish on the build server):
+   ```bash
+   uv sync
+   ```
+
+The teacher does **not** need to attach template files or paste YAML by hand. Your inputs are the lesson brief (topic, branches, text vs media) and this document.
+
+---
+
 ## How BranchSlide works (read this first)
 
 BranchSlide is a **directed graph** of slides (**nodes**) connected by **branches** (teacher choices).
@@ -191,16 +214,57 @@ assets:
 
 Place binaries in `assets/`. Every `path` and `captions` in the manifest must exist on disk before publish.
 
-### Step 5 — Validate and publish
+### Step 5 — Validate
 
 ```bash
 uv run validate maps/my-lesson
-uv run publish maps/my-lesson
 ```
 
-Fix every **error** before publish. Warnings should be reviewed.
+Fix every **error** before delivery. Warnings should be reviewed.
 
-### Step 6 — Remove (when replacing a map)
+**Publish** (`uv run publish maps/my-lesson`) is usually run on the **classroom machine** after the map folder is copied there — see [Deliverable packaging](#deliverable-packaging) below.
+
+### Step 6 — Package for the classroom machine
+
+The teacher copies the finished map to the laptop that runs BranchSlide in class. **Create a zip** after validation passes.
+
+**Use this zip layout** (top level is the slug folder — **not** `maps/`):
+
+```bash
+mkdir -p deliverables
+(cd maps && zip -r ../deliverables/my-lesson.zip my-lesson/)
+```
+
+Check with `unzip -l deliverables/my-lesson.zip` — paths must look like `my-lesson/manifest.yaml`, **not** `maps/my-lesson/manifest.yaml`.
+
+Deliver **`deliverables/my-lesson.zip`** (or the whole `maps/my-lesson/` folder).
+
+**On the classroom machine** (from the BranchSlide repo root):
+
+```bash
+unzip ~/Downloads/my-lesson.zip -d maps/
+uv run validate maps/my-lesson
+uv run publish maps/my-lesson
+uv run main
+```
+
+**If the zip already contains a `maps/` prefix** (Hermes ran `zip -r … maps/my-lesson/` from the repo root), unzip to the repo root instead — **not** into `maps/`:
+
+```bash
+unzip ~/Downloads/my-lesson.zip -d .    # yields maps/my-lesson/ correctly
+```
+
+Wrong: `unzip … -d maps/` when the archive paths start with `maps/` → creates `maps/maps/my-lesson/` and publish fails.
+
+| Delivery method | Best for |
+|-----------------|----------|
+| **Zip** (`deliverables/{slug}.zip`) | Default — works for text and media; no git required on the classroom laptop |
+| **Git push / PR** | Text-only maps when both machines use the same repo |
+| **rsync / scp** | Large video files you do not want in git |
+
+Do not assume `publish` on the build server makes the map visible in class — publishing updates the database on **that** machine only.
+
+### Step 7 — Remove (when replacing a map)
 
 ```bash
 uv run remove my-lesson                  # database only
@@ -249,8 +313,10 @@ See `maps/example-inquiry/manifest.yaml` for a real manifest.
 
 | Task | Command |
 |------|---------|
+| Clone repo | `git clone https://github.com/ctroy978/branchSlide.git` |
 | Validate | `uv run validate maps/{slug}` |
-| Publish | `uv run publish maps/{slug}` |
+| Zip for classroom | `(cd maps && zip -r ../deliverables/{slug}.zip {slug}/)` — top level `{slug}/`, not `maps/{slug}/` |
+| Publish (classroom) | `uv run publish maps/{slug}` |
 | Run class | `uv run main` |
 | Teacher URL | `http://localhost:8000/g/{slug}/teacher` |
 | Template | `maps/_template/` |
