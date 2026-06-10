@@ -14,6 +14,8 @@
 
 A generic, teacher-controlled branching inquiry framework. Teachers navigate inquiry maps in real time; students follow on a live projector view. All content is authored in files — nothing is hardcoded per map.
 
+**Building a presentation with Hermes?** Read **[`HERMES.md`](HERMES.md)** first.
+
 This README is the **authoring reference**. Every slot has a name and a defined purpose so humans and AI can create compatible content without reading the application source code.
 
 ---
@@ -48,7 +50,7 @@ maps/my-inquiry/
 
 ### AI authoring (Hermes)
 
-**Agent prompt:** [`prompts/hermes-map-authoring.md`](prompts/hermes-map-authoring.md)  
+**Agent prompt:** [`HERMES.md`](HERMES.md) — start here  
 **Starter skeleton:** copy `maps/_template/` to `maps/{your-slug}/`
 
 ### Publish, validate, remove

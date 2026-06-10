@@ -7,4 +7,4 @@ Copy this folder to `maps/{your-slug}/` and replace placeholders.
 3. Add `assets/opening-clip.mp4` (and real `.vtt` captions)
 4. Run `uv run validate maps/{your-slug}` then `uv run publish maps/{your-slug}`
 
-Authoring guide for Hermes: `prompts/hermes-map-authoring.md`
+Authoring guide for Hermes: `HERMES.md` (repository root)
