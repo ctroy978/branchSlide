@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.config import BASE_DIR
 from app.database import get_db
-from app.utils.network import build_projector_url, build_public_base_url
+from app.utils.network import build_projector_base_url, build_projector_url, build_public_base_url
 from app.services.graph import GraphNotFoundError, NodeNotFoundError, list_graphs
 from app.services.preview import (
     build_preview_state,
@@ -99,13 +99,15 @@ def teacher_panel(
 
     teacher_path = f"/g/{graph_slug}/teacher?session={state.session_id}"
     public_base, used_lan_fallback = build_public_base_url(request)
-    projector_full_url, projector_lan_fallback = build_projector_url(request, state.join_code)
+    projector_base_url, projector_lan_fallback = build_projector_base_url(request)
+    projector_full_url, _ = build_projector_url(request, state.join_code)
     teacher_full_url = f"{public_base}{teacher_path}"
     return templates.TemplateResponse(
         request,
         "teacher.html",
         {
             "state": state,
+            "projector_base_url": projector_base_url,
             "projector_full_url": projector_full_url,
             "teacher_url": teacher_path,
             "teacher_full_url": teacher_full_url,

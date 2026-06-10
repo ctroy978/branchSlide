@@ -26,11 +26,11 @@
             <input type="text" readonly value="{{ projector_full_url }}"
                    id="projector-url"
                    class="flex-1 bg-white border border-indigo-200 rounded-lg px-3 py-2 text-sm font-mono">
-            <button onclick="navigator.clipboard.writeText(document.getElementById('projector-url').value)"
+            <button onclick="copyProjectorUrl()"
                     class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">
                 Copy URL
             </button>
-            <button onclick="navigator.clipboard.writeText(document.getElementById('join-code').textContent)"
+            <button onclick="copyJoinCode()"
                     class="bg-white border border-indigo-300 text-indigo-700 px-4 py-2 rounded-lg text-sm hover:bg-indigo-100">
                 Copy code
             </button>
@@ -102,6 +102,7 @@
 <script>
     const graphSlug = "{{ graph_slug }}";
     let sessionId = "{{ state.session_id }}";
+    const projectorBaseUrl = {{ projector_base_url | tojson }};
     const errorBanner = document.getElementById('error-banner');
     const connectionStatus = document.getElementById('connection-status');
 
@@ -119,6 +120,37 @@
 
     function clearError() {
         errorBanner.classList.add('hidden');
+    }
+
+    function currentJoinCode() {
+        return document.getElementById('join-code').textContent.trim();
+    }
+
+    function projectorUrlForCode(code) {
+        return `${projectorBaseUrl}/${code}`;
+    }
+
+    function updateProjectorUrl(code) {
+        const input = document.getElementById('projector-url');
+        if (input && code) {
+            input.value = projectorUrlForCode(code);
+        }
+    }
+
+    function copyProjectorUrl() {
+        const code = currentJoinCode();
+        if (!code) {
+            return;
+        }
+        updateProjectorUrl(code);
+        navigator.clipboard.writeText(projectorUrlForCode(code));
+    }
+
+    function copyJoinCode() {
+        const code = currentJoinCode();
+        if (code) {
+            navigator.clipboard.writeText(code);
+        }
     }
 
     function setConnectionStatus(kind) {
@@ -231,6 +263,7 @@
         const joinCodeEl = document.getElementById('join-code');
         if (joinCodeEl && state.join_code) {
             joinCodeEl.textContent = state.join_code;
+            updateProjectorUrl(state.join_code);
         }
         renderPhaseControls(state);
         renderAudioControls(state);
