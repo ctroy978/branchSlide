@@ -44,7 +44,7 @@
             <input type="text" readonly value="{{ teacher_full_url }}"
                    id="teacher-url"
                    class="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono">
-            <button onclick="navigator.clipboard.writeText(document.getElementById('teacher-url').value)"
+            <button onclick="copyTeacherUrl()"
                     class="bg-slate-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-slate-800">
                 Copy
             </button>
@@ -96,6 +96,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="/static/js/clipboard.js"></script>
 <script src="/static/js/shutdown.js"></script>
 <script src="/static/js/audio_sync.js"></script>
 <script src="/static/js/session_sync.js"></script>
@@ -112,6 +113,7 @@
         reconnecting: 'Reconnecting…',
         server_unreachable: 'Server unreachable — retrying…',
     };
+    let lastConnectionStatus = 'connecting';
 
     function showError(message) {
         errorBanner.textContent = message;
@@ -137,23 +139,49 @@
         }
     }
 
-    function copyProjectorUrl() {
+    async function copyWithFeedback(text, inputId, label) {
+        const copied = await copyText(text);
+        if (copied) {
+            clearError();
+            const previous = lastConnectionStatus;
+            connectionStatus.textContent = `Copied ${label}`;
+            connectionStatus.className = 'text-xs mt-2 text-green-600';
+            window.setTimeout(() => setConnectionStatus(previous), 2000);
+            return;
+        }
+        if (inputId) {
+            selectInputText(inputId);
+        }
+        showError(`Could not copy automatically — ${label} selected; press Ctrl+C (or Cmd+C).`);
+    }
+
+    async function copyProjectorUrl() {
         const code = currentJoinCode();
         if (!code) {
             return;
         }
         updateProjectorUrl(code);
-        navigator.clipboard.writeText(projectorUrlForCode(code));
+        await copyWithFeedback(projectorUrlForCode(code), 'projector-url', 'projector URL');
     }
 
-    function copyJoinCode() {
+    async function copyJoinCode() {
         const code = currentJoinCode();
-        if (code) {
-            navigator.clipboard.writeText(code);
+        if (!code) {
+            return;
         }
+        await copyWithFeedback(code, null, 'class code');
+    }
+
+    async function copyTeacherUrl() {
+        const input = document.getElementById('teacher-url');
+        if (!input?.value) {
+            return;
+        }
+        await copyWithFeedback(input.value, 'teacher-url', 'teacher URL');
     }
 
     function setConnectionStatus(kind) {
+        lastConnectionStatus = kind;
         connectionStatus.textContent = STATUS_LABELS[kind] || STATUS_LABELS.connecting;
         connectionStatus.className = 'text-xs mt-2 ' + (
             kind === 'live' ? 'text-green-600' :
