@@ -163,6 +163,11 @@ def create_session(db: Session, graph_slug: str) -> InquirySession:
     if not graph.entry_node_id:
         raise GraphNotFoundError(f"Graph '{graph_slug}' has no entry node")
 
+    db.query(InquirySession).filter(
+        InquirySession.graph_id == graph.id,
+        InquirySession.status == "active",
+    ).update({"status": "archived"}, synchronize_session=False)
+
     inquiry_session = InquirySession(
         graph_id=graph.id,
         current_node_id=graph.entry_node_id,
@@ -185,7 +190,7 @@ def get_session_by_join_code(db: Session, join_code: str) -> InquirySession:
     inquiry_session = (
         db.query(InquirySession)
         .options(joinedload(InquirySession.graph), joinedload(InquirySession.current_node))
-        .filter(InquirySession.join_code == code)
+        .filter(InquirySession.join_code == code, InquirySession.status == "active")
         .first()
     )
     if not inquiry_session:
@@ -196,6 +201,19 @@ def get_session_by_join_code(db: Session, join_code: str) -> InquirySession:
 def get_session_state_by_join_code(db: Session, join_code: str) -> SessionState:
     inquiry_session = get_session_by_join_code(db, join_code)
     return _build_session_state(db, inquiry_session)
+
+
+def activate_session(db: Session, graph_slug: str, session_id: str) -> InquirySession:
+    inquiry_session = get_session(db, graph_slug, session_id)
+    db.query(InquirySession).filter(
+        InquirySession.graph_id == inquiry_session.graph_id,
+        InquirySession.id != inquiry_session.id,
+        InquirySession.status == "active",
+    ).update({"status": "archived"}, synchronize_session=False)
+    inquiry_session.status = "active"
+    db.commit()
+    db.refresh(inquiry_session)
+    return inquiry_session
 
 
 def get_session(db: Session, graph_slug: str, session_id: str) -> InquirySession:

@@ -15,6 +15,7 @@ from app.services.session import (
     control_audio,
     create_session,
     get_session_state,
+    get_session_state_by_join_code,
     go_back,
     reset_session,
     select_branch,
@@ -31,6 +32,16 @@ def api_create_session(graph_slug: str, db: Session = Depends(get_db)) -> Sessio
         inquiry_session = create_session(db, graph_slug)
         return get_session_state(db, graph_slug, inquiry_session.id)
     except GraphNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/join/{join_code}", response_model=SessionState)
+def api_get_session_by_join_code(
+    join_code: str, db: Session = Depends(get_db)
+) -> SessionState:
+    try:
+        return get_session_state_by_join_code(db, join_code)
+    except SessionNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 

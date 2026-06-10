@@ -14,7 +14,14 @@
 {% endblock %}
 
 {% block content %}
-<div class="min-h-screen flex flex-col items-center justify-center px-8 py-12">
+<div id="sync-loading" class="min-h-screen flex flex-col items-center justify-center px-8 py-12 text-center">
+    <p class="text-sm uppercase tracking-widest text-slate-400 mb-4">BranchSlide Projector</p>
+    <h1 class="text-3xl font-bold mb-3">Connecting to class…</h1>
+    {% if use_join_code | default(false) %}
+    <p class="text-slate-400">Code <span class="font-mono tracking-widest text-white">{{ join_code }}</span></p>
+    {% endif %}
+</div>
+<div class="min-h-screen flex flex-col items-center justify-center px-8 py-12 hidden" id="projector-shell">
     <div id="projector-content" class="max-w-4xl w-full text-center
          {% if state.display_phase == 'branch_question' %}projector-question{% endif %}">
         <p id="phase-label" class="text-sm uppercase tracking-widest mb-4
@@ -31,6 +38,9 @@
            {% if state.node.node_type != 'synthesis' %}hidden{% endif %}">— Synthesis —</p>
     </div>
     <p id="connection-status" class="fixed bottom-4 right-4 text-xs text-slate-500">Connecting…</p>
+    {% if use_join_code | default(false) %}
+    <p id="join-code-label" class="fixed top-4 right-4 text-xs text-slate-500 font-mono tracking-widest">{{ join_code }}</p>
+    {% endif %}
 </div>
 
 <div id="fatal-overlay" class="hidden fixed inset-0 bg-slate-950/95 flex flex-col items-center justify-center px-8 text-center z-50">
@@ -74,7 +84,13 @@
         status.className = 'fixed bottom-4 right-4 text-xs ' + info.className;
     }
 
+    function revealProjector() {
+        document.getElementById('sync-loading').classList.add('hidden');
+        document.getElementById('projector-shell').classList.remove('hidden');
+    }
+
     function applyProjectorState(state) {
+        revealProjector();
         stopAllAudio();
 
         const node = state.node;
@@ -97,8 +113,9 @@
 
     function showFatal(kind) {
         if (kind === 'session_not_found') {
-            fatalTitle.textContent = 'Session not found';
-            fatalMessage.textContent = 'This classroom session no longer exists. Ask the teacher for an updated projector link.';
+            document.getElementById('sync-loading').classList.add('hidden');
+            fatalTitle.textContent = 'Code not found';
+            fatalMessage.textContent = 'This class code is no longer active. Copy a fresh projector URL from the teacher panel — each new session gets a new code.';
         } else {
             fatalTitle.textContent = 'Connection lost';
             fatalMessage.textContent = 'Cannot reach the BranchSlide server. Check your network connection, then retry.';
@@ -113,6 +130,7 @@
     };
     if (teacherSyncUrl) {
         syncOptions.syncBaseUrl = teacherSyncUrl;
+        syncOptions.pollIntervalMs = 2000;
     }
     if (useJoinCode) {
         syncOptions.joinCode = joinCode;

@@ -47,15 +47,7 @@ def build_teacher_base_url(request: Request) -> tuple[str, bool]:
 
     host = request.url.hostname or "localhost"
     scheme = request.url.scheme
-    used_fallback = False
-
-    if host in {"localhost", "127.0.0.1"}:
-        lan_ip = get_lan_ip()
-        if lan_ip:
-            host = lan_ip
-            used_fallback = True
-
-    return f"{scheme}://{host}:{TEACHER_PORT}", used_fallback
+    return f"{scheme}://{host}:{TEACHER_PORT}", False
 
 
 def build_projector_base_url(request: Request) -> tuple[str, bool]:

@@ -7,22 +7,35 @@ function createSessionSync(options) {
         graphSlug,
         sessionId,
         syncBaseUrl,
+        pollIntervalMs = 0,
         onState,
         onStatus,
         onFatalError,
     } = options;
 
-    const apiUrl = joinCode
-        ? `/api/${joinCode}`
-        : `/api/g/${graphSlug}/sessions/${sessionId}`;
+    const syncRoot = (syncBaseUrl || '').replace(/\/$/, '');
+
+    function stateApiUrl() {
+        if (joinCode) {
+            return syncRoot
+                ? `${syncRoot}/api/join/${joinCode}`
+                : `/api/${joinCode}`;
+        }
+        return syncRoot
+            ? `${syncRoot}/api/g/${graphSlug}/sessions/${sessionId}`
+            : `/api/g/${graphSlug}/sessions/${sessionId}`;
+    }
+
     let ws = null;
     let reconnectAttempt = 0;
     let reconnectTimer = null;
+    let pollTimer = null;
     let intentionalClose = false;
+    let hasReceivedState = false;
 
     function wsOrigin() {
-        if (syncBaseUrl) {
-            const url = new URL(syncBaseUrl);
+        if (syncRoot) {
+            const url = new URL(syncRoot);
             url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
             return url.origin;
         }
@@ -40,7 +53,7 @@ function createSessionSync(options) {
     async function fetchState() {
         let response;
         try {
-            response = await fetch(apiUrl);
+            response = await fetch(stateApiUrl());
         } catch {
             throw new Error('server_unreachable');
         }
@@ -53,11 +66,39 @@ function createSessionSync(options) {
         return response.json();
     }
 
+    function deliverState(state) {
+        hasReceivedState = true;
+        onState(state);
+    }
+
     function clearReconnectTimer() {
         if (reconnectTimer !== null) {
             clearTimeout(reconnectTimer);
             reconnectTimer = null;
         }
+    }
+
+    function clearPollTimer() {
+        if (pollTimer !== null) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+        }
+    }
+
+    function startPolling() {
+        if (!pollIntervalMs || pollTimer !== null) {
+            return;
+        }
+        pollTimer = setInterval(async () => {
+            try {
+                deliverState(await fetchState());
+            } catch (error) {
+                if (error.message === 'session_not_found') {
+                    clearPollTimer();
+                    onFatalError('session_not_found');
+                }
+            }
+        }, pollIntervalMs);
     }
 
     function scheduleReconnect() {
@@ -68,8 +109,7 @@ function createSessionSync(options) {
 
         reconnectTimer = setTimeout(async () => {
             try {
-                const state = await fetchState();
-                onState(state);
+                deliverState(await fetchState());
                 connect();
             } catch (error) {
                 if (error.message === 'session_not_found') {
@@ -97,7 +137,7 @@ function createSessionSync(options) {
         ws.onmessage = (event) => {
             const msg = JSON.parse(event.data);
             if (msg.type === 'node_changed' && msg.state) {
-                onState(msg.state);
+                deliverState(msg.state);
             } else if (msg.type === 'audio_control') {
                 handleAudioControl(msg);
             }
@@ -111,6 +151,7 @@ function createSessionSync(options) {
                 onFatalError('session_not_found');
                 return;
             }
+            onStatus('reconnecting');
             scheduleReconnect();
         };
 
@@ -123,9 +164,9 @@ function createSessionSync(options) {
         async start() {
             onStatus('connecting');
             try {
-                const state = await fetchState();
-                onState(state);
+                deliverState(await fetchState());
                 connect();
+                startPolling();
             } catch (error) {
                 if (error.message === 'session_not_found') {
                     onFatalError('session_not_found');
@@ -133,15 +174,18 @@ function createSessionSync(options) {
                 }
                 onStatus('server_unreachable');
                 scheduleReconnect();
+                startPolling();
             }
         },
         stop() {
             intentionalClose = true;
             clearReconnectTimer();
+            clearPollTimer();
             if (ws) {
                 ws.close();
                 ws = null;
             }
         },
+        hasReceivedState: () => hasReceivedState,
     };
 }

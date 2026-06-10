@@ -14,7 +14,12 @@ from app.services.preview import (
     preview_branch_path,
     preview_show_question_path,
 )
-from app.services.session import SessionNotFoundError, create_session, get_session_state
+from app.services.session import (
+    SessionNotFoundError,
+    activate_session,
+    create_session,
+    get_session_state,
+)
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(BASE_DIR / "app" / "templates"))
@@ -65,6 +70,7 @@ def teacher_panel(
 ) -> HTMLResponse:
     try:
         if session:
+            activate_session(db, graph_slug, session)
             state = get_session_state(db, graph_slug, session)
         else:
             inquiry_session = create_session(db, graph_slug)
