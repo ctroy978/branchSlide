@@ -6,6 +6,7 @@ function createSessionSync(options) {
         joinCode,
         graphSlug,
         sessionId,
+        syncBaseUrl,
         onState,
         onStatus,
         onFatalError,
@@ -19,12 +20,21 @@ function createSessionSync(options) {
     let reconnectTimer = null;
     let intentionalClose = false;
 
-    function wsUrl() {
+    function wsOrigin() {
+        if (syncBaseUrl) {
+            const url = new URL(syncBaseUrl);
+            url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+            return url.origin;
+        }
         const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+        return `${protocol}://${location.host}`;
+    }
+
+    function wsUrl() {
         const path = joinCode
             ? `/ws/${joinCode}`
             : `/ws/g/${graphSlug}/sessions/${sessionId}`;
-        return `${protocol}://${location.host}${path}`;
+        return `${wsOrigin()}${path}`;
     }
 
     async function fetchState() {

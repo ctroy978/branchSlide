@@ -7,6 +7,7 @@ from app.config import BASE_DIR
 from app.database import get_db
 from app.services.join_code import is_valid_join_code, normalize_join_code
 from app.services.session import SessionNotFoundError, get_session_state_by_join_code
+from app.utils.network import build_teacher_base_url
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(BASE_DIR / "app" / "templates"))
@@ -60,6 +61,8 @@ def projector_by_code(
             message="No active class matches that code. Check the code on the teacher panel and try again.",
         )
 
+    teacher_sync_url, _ = build_teacher_base_url(request)
+
     return templates.TemplateResponse(
         request,
         "projector.html",
@@ -67,5 +70,6 @@ def projector_by_code(
             "state": state,
             "join_code": code,
             "use_join_code": True,
+            "teacher_sync_url": teacher_sync_url,
         },
     )

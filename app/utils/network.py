@@ -3,7 +3,7 @@ from urllib.parse import urlparse, urlunparse
 
 from fastapi import Request
 
-from app.config import PROJECTOR_PORT, PROJECTOR_PUBLIC_URL, PUBLIC_BASE_URL
+from app.config import PROJECTOR_PORT, PROJECTOR_PUBLIC_URL, PUBLIC_BASE_URL, TEACHER_PORT
 
 
 def get_lan_ip() -> str | None:
@@ -38,6 +38,24 @@ def build_public_base_url(request: Request) -> tuple[str, bool]:
             return f"{scheme}://{lan_ip}{port_suffix}", True
 
     return f"{scheme}://{host}{port_suffix}", False
+
+
+def build_teacher_base_url(request: Request) -> tuple[str, bool]:
+    """Return the teacher app URL for live sync from the projector app (port 8001 → 8000)."""
+    if PUBLIC_BASE_URL:
+        return PUBLIC_BASE_URL, False
+
+    host = request.url.hostname or "localhost"
+    scheme = request.url.scheme
+    used_fallback = False
+
+    if host in {"localhost", "127.0.0.1"}:
+        lan_ip = get_lan_ip()
+        if lan_ip:
+            host = lan_ip
+            used_fallback = True
+
+    return f"{scheme}://{host}:{TEACHER_PORT}", used_fallback
 
 
 def build_projector_base_url(request: Request) -> tuple[str, bool]:

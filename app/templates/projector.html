@@ -48,6 +48,7 @@
 <script src="/static/js/session_sync.js"></script>
 <script>
     const useJoinCode = {{ use_join_code | default(false) | tojson }};
+    const teacherSyncUrl = {{ teacher_sync_url | default('') | tojson }};
     const joinCode = {{ join_code | tojson if use_join_code | default(false) else 'null' }};
     const graphSlug = {{ graph_slug | tojson if not (use_join_code | default(false)) else 'null' }};
     const sessionId = {{ session_id | tojson if not (use_join_code | default(false)) else 'null' }};
@@ -107,6 +108,9 @@
         onStatus: setStatus,
         onFatalError: showFatal,
     };
+    if (teacherSyncUrl) {
+        syncOptions.syncBaseUrl = teacherSyncUrl;
+    }
     if (useJoinCode) {
         syncOptions.joinCode = joinCode;
     } else {
