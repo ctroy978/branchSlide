@@ -4,8 +4,16 @@
 
 {% block content %}
 <div class="max-w-3xl mx-auto px-6 py-12">
-    <h1 class="text-4xl font-bold mb-2">BranchSlide</h1>
-    <p class="text-slate-600 mb-8">Teacher-controlled branching inquiry system</p>
+    <div class="flex items-start justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-4xl font-bold mb-2">BranchSlide</h1>
+            <p class="text-slate-600">Teacher-controlled branching inquiry system</p>
+        </div>
+        <a href="/library"
+           class="inline-block bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 transition text-sm whitespace-nowrap">
+            Manage library
+        </a>
+    </div>
 
     {% if graphs %}
     <div class="space-y-4">
@@ -30,7 +38,9 @@
     <div class="bg-amber-50 border border-amber-200 rounded-xl p-6">
         <p class="text-amber-800">No inquiry maps loaded yet.</p>
         <p class="text-sm text-amber-700 mt-2">
-            Run: <code class="bg-amber-100 px-1 rounded">python scripts/load_inquiry_map.py maps/example-inquiry</code>
+            <a href="/library" class="underline hover:text-amber-900">Upload and install a map</a>
+            from the library, or run:
+            <code class="bg-amber-100 px-1 rounded">uv run publish maps/example-inquiry</code>
         </p>
     </div>
     {% endif %}

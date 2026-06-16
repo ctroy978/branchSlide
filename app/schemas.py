@@ -74,6 +74,20 @@ class ValidationReport(BaseModel):
     warnings: list[ValidationIssueOut]
 
 
+class LibraryEntry(BaseModel):
+    filename: str
+    slug: str | None = None
+    title: str | None = None
+    file_size: int
+    installed: bool = False
+    installed_slug: str | None = None
+
+
+class InstallResult(BaseModel):
+    graph: GraphSummary
+    warnings: list[ValidationIssueOut]
+
+
 class PreviewState(BaseModel):
     graph_slug: str
     graph_title: str

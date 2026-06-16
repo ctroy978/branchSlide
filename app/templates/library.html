@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}BranchSlide — Map Library{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-6 py-12">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-4xl font-bold mb-2">Map Library</h1>
+            <p class="text-slate-600">Upload zip archives, validate, and install inquiry maps.</p>
+        </div>
+        <a href="/" class="text-indigo-600 hover:underline text-sm whitespace-nowrap">← All maps</a>
+    </div>
+
+    <div id="error-banner" class="hidden mb-6 bg-red-50 border border-red-200 text-red-800 rounded-xl px-4 py-3 text-sm"></div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+        <h2 class="text-lg font-semibold mb-3">Upload archive</h2>
+        <p class="text-sm text-slate-600 mb-4">
+            Zip layout: top-level <code class="bg-slate-100 px-1 rounded">{slug}/manifest.yaml</code>
+            (see <code class="bg-slate-100 px-1 rounded">HERMES.md</code>).
+        </p>
+        <div class="flex flex-wrap gap-3 items-center">
+            <input type="file" id="zip-upload" accept=".zip,application/zip"
+                   class="block text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+            <button id="upload-button" onclick="uploadZip()"
+                    class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                Upload
+            </button>
+        </div>
+    </div>
+
+    <div class="flex items-center gap-3 mb-4">
+        <h2 class="text-lg font-semibold">Archives</h2>
+        <label class="text-sm text-slate-600 flex items-center gap-2">
+            <input type="checkbox" id="force-uninstall" class="rounded border-slate-300">
+            Force uninstall (active sessions)
+        </label>
+    </div>
+
+    <div id="library-empty" class="{% if entries %}hidden{% endif %} bg-amber-50 border border-amber-200 rounded-xl p-6 mb-4">
+        <p class="text-amber-800">No zip archives in the library yet. Upload one above.</p>
+    </div>
+
+    <div id="library-list" class="space-y-4">
+        {% for entry in entries %}
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6" id="entry-{{ entry.filename }}">
+            <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
+                <div>
+                    <h2 class="text-lg font-semibold">{{ entry.title or entry.slug or "Unknown map" }}</h2>
+                    <p class="text-sm text-slate-500">{{ entry.filename }}</p>
+                </div>
+                {% if entry.installed %}
+                <span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded">Installed</span>
+                {% elif entry.slug %}
+                <span class="inline-block bg-slate-100 text-slate-700 text-xs font-medium px-2 py-1 rounded">Ready</span>
+                {% else %}
+                <span class="inline-block bg-amber-100 text-amber-800 text-xs font-medium px-2 py-1 rounded">Unreadable</span>
+                {% endif %}
+            </div>
+            {% if entry.slug %}
+            <p class="text-sm text-slate-500 mb-3">Slug: <code class="bg-slate-100 px-1 rounded">{{ entry.slug }}</code></p>
+            {% else %}
+            <p class="text-sm text-amber-700 mb-3">Could not read manifest from archive.</p>
+            {% endif %}
+            <div class="flex flex-wrap gap-2 mb-3">
+                <button onclick="validateZip('{{ entry.filename }}')"
+                        class="bg-white border border-slate-300 text-slate-700 px-3 py-2 rounded-lg text-sm hover:bg-slate-50">
+                    Validate
+                </button>
+                {% if entry.slug %}
+                <button onclick="installZip('{{ entry.filename }}')"
+                        class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-indigo-700">
+                    {% if entry.installed %}Re-install{% else %}Install{% endif %}
+                </button>
+                {% endif %}
+                {% if entry.installed %}
+                <button onclick="uninstallMap('{{ entry.installed_slug }}')"
+                        class="bg-white border border-red-300 text-red-700 px-3 py-2 rounded-lg text-sm hover:bg-red-50">
+                    Uninstall
+                </button>
+                <a href="/g/{{ entry.installed_slug }}/teacher"
+                   class="bg-white border border-indigo-300 text-indigo-700 px-3 py-2 rounded-lg text-sm hover:bg-indigo-50">
+                    Open teacher panel
+                </a>
+                {% endif %}
+                {% if not entry.installed %}
+                <button onclick="deleteZip('{{ entry.filename }}')"
+                        class="bg-white border border-slate-300 text-slate-600 px-3 py-2 rounded-lg text-sm hover:bg-slate-50">
+                    Delete zip
+                </button>
+                {% endif %}
+            </div>
+            <div id="report-{{ entry.filename }}" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3"></div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% include "partials/end_service_button.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.__LIBRARY_ENTRIES__ = {{ entries | tojson }};
+</script>
+<script src="/static/js/library.js"></script>
+<script src="/static/js/shutdown.js"></script>
+{% endblock %}

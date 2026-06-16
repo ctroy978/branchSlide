@@ -1,4 +1,5 @@
 data/
+library/*.zip
 __pycache__/
 *.pyc
 .venv/

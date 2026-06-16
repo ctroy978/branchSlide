@@ -4,6 +4,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 MAPS_DIR = BASE_DIR / "maps"
+LIBRARY_DIR = BASE_DIR / "library"
 DATABASE_URL = f"sqlite:///{DATA_DIR / 'branchslide.db'}"
 
 TEACHER_PORT = int(os.getenv("PORT", os.getenv("BRANCHSLIDE_TEACHER_PORT", "8000")))
@@ -19,6 +20,7 @@ CORS_ORIGINS = os.getenv("BRANCHSLIDE_CORS_ORIGINS", "*")
 # Asset pipeline — folder layout: maps/{slug}/assets/
 ASSET_FOLDER_PREFIX = "assets/"
 ASSET_MAX_BYTES = int(os.getenv("BRANCHSLIDE_ASSET_MAX_BYTES", str(50 * 1024 * 1024)))
+LIBRARY_MAX_BYTES = int(os.getenv("BRANCHSLIDE_LIBRARY_MAX_BYTES", str(200 * 1024 * 1024)))
 
 ALLOWED_NODE_TYPES = frozenset({"content", "synthesis"})
 ALLOWED_NODE_LAYOUTS = frozenset({"default", "video"})

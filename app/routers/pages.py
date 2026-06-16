@@ -7,6 +7,7 @@ from app.config import BASE_DIR
 from app.database import get_db
 from app.utils.network import build_projector_base_url, build_projector_url, build_public_base_url
 from app.services.graph import GraphNotFoundError, NodeNotFoundError, list_graphs
+from app.services.library import list_library_entries
 from app.services.preview import (
     build_preview_state,
     parse_history,
@@ -58,6 +59,16 @@ def index(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
         request,
         "index.html",
         {"graphs": graphs},
+    )
+
+
+@router.get("/library", response_class=HTMLResponse)
+def library_page(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
+    entries = [dict(entry) for entry in list_library_entries(db)]
+    return templates.TemplateResponse(
+        request,
+        "library.html",
+        {"entries": entries},
     )
 
 
