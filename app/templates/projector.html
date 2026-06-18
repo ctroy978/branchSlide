@@ -25,6 +25,14 @@
     {% if use_join_code | default(false) %}
     <p class="text-slate-400">Code <span class="font-mono tracking-widest text-white">{{ join_code }}</span></p>
     {% endif %}
+    <p class="text-slate-400 mt-6 max-w-md">Click anywhere on this screen once to enable classroom audio.</p>
+</div>
+
+<div id="audio-unlock-overlay"
+     class="hidden fixed inset-0 bg-slate-950/90 flex flex-col items-center justify-center px-8 text-center z-40 cursor-pointer">
+    <p class="text-sm uppercase tracking-widest text-amber-400 mb-4">Audio waiting</p>
+    <h2 class="text-3xl font-bold mb-3">Click to play sound for the class</h2>
+    <p class="text-slate-300 max-w-md">Browsers require one click on the projector before teacher-triggered audio can play.</p>
 </div>
 <div class="min-h-screen flex flex-col items-center justify-center px-8 py-12 hidden" id="projector-shell">
     <div id="projector-content" class="max-w-4xl w-full text-center
@@ -75,6 +83,28 @@
     const fatalOverlay = document.getElementById('fatal-overlay');
     const fatalTitle = document.getElementById('fatal-title');
     const fatalMessage = document.getElementById('fatal-message');
+    const audioUnlockOverlay = document.getElementById('audio-unlock-overlay');
+
+    initMediaPlaybackUnlock();
+
+    function hideAudioUnlockOverlay() {
+        audioUnlockOverlay.classList.add('hidden');
+    }
+
+    function showAudioUnlockOverlay() {
+        if (!isMediaPlaybackUnlocked()) {
+            audioUnlockOverlay.classList.remove('hidden');
+        }
+    }
+
+    audioUnlockOverlay.addEventListener('pointerdown', () => {
+        unlockMediaPlayback();
+        hideAudioUnlockOverlay();
+    });
+
+    setMediaPlaybackBlockedHandler(() => {
+        showAudioUnlockOverlay();
+    });
 
     const STATUS_LABELS = {
         connecting: { text: 'Connecting…', className: 'text-slate-500' },
@@ -92,6 +122,9 @@
     function revealProjector() {
         document.getElementById('sync-loading').classList.add('hidden');
         document.getElementById('projector-shell').classList.remove('hidden');
+        if (isMediaPlaybackUnlocked()) {
+            hideAudioUnlockOverlay();
+        }
     }
 
     let lastSlideKey = null;
