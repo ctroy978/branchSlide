@@ -94,15 +94,26 @@
         document.getElementById('projector-shell').classList.remove('hidden');
     }
 
+    let lastSlideKey = null;
+
+    function slideKey(state) {
+        return `${state.session_id}:${state.node.slug}:${state.display_phase}`;
+    }
+
     function applyProjectorState(state) {
         revealProjector();
-        stopAllMedia();
 
         const node = state.node;
         const isQuestion = state.display_phase === 'branch_question';
         const content = document.getElementById('projector-content');
         const phaseLabel = document.getElementById('phase-label');
         const synthesis = document.getElementById('synthesis-marker');
+        const slideChanged = slideKey(state) !== lastSlideKey;
+
+        if (slideChanged) {
+            stopAllMedia();
+            lastSlideKey = slideKey(state);
+        }
 
         content.classList.toggle('projector-question', isQuestion);
         phaseLabel.textContent = isQuestion ? 'Discussion' : graphTitle;
@@ -113,10 +124,13 @@
         document.getElementById('projector-shell').classList.toggle('projector-video-slide', isVideoSlide);
 
         document.getElementById('node-title').textContent = node.title;
-        document.getElementById('node-body').innerHTML = node.html_content;
+
+        if (slideChanged) {
+            document.getElementById('node-body').innerHTML = node.html_content;
+            handleMediaAutoplay(state);
+        }
 
         synthesis.classList.toggle('hidden', node.node_type !== 'synthesis' || isVideoSlide);
-        handleMediaAutoplay(state);
     }
 
     function showFatal(kind) {
@@ -135,6 +149,7 @@
         onState: applyProjectorState,
         onStatus: setStatus,
         onFatalError: showFatal,
+        onMediaControl: handleMediaControl,
     };
     if (teacherSyncUrl) {
         syncOptions.syncBaseUrl = teacherSyncUrl;

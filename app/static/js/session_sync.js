@@ -11,6 +11,7 @@ function createSessionSync(options) {
         onState,
         onStatus,
         onFatalError,
+        onMediaControl,
     } = options;
 
     const syncRoot = (syncBaseUrl || '').replace(/\/$/, '');
@@ -138,8 +139,11 @@ function createSessionSync(options) {
             const msg = JSON.parse(event.data);
             if (msg.type === 'node_changed' && msg.state) {
                 deliverState(msg.state);
-            } else if (msg.type === 'media_control' || msg.type === 'audio_control') {
-                handleMediaControl(msg);
+            } else if (
+                onMediaControl &&
+                (msg.type === 'media_control' || msg.type === 'audio_control')
+            ) {
+                onMediaControl(msg);
             }
         };
 
