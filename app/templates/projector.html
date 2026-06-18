@@ -25,7 +25,9 @@
     {% if use_join_code | default(false) %}
     <p class="text-slate-400">Code <span class="font-mono tracking-widest text-white">{{ join_code }}</span></p>
     {% endif %}
-    <p class="text-slate-400 mt-6 max-w-md">Click anywhere on this screen once to enable classroom audio.</p>
+    <p id="audio-gesture-hint" class="hidden text-slate-400 mt-6 max-w-md">
+        Click anywhere on this screen once to enable classroom audio.
+    </p>
 </div>
 
 <div id="audio-unlock-overlay"
@@ -84,15 +86,14 @@
     const fatalTitle = document.getElementById('fatal-title');
     const fatalMessage = document.getElementById('fatal-message');
     const audioUnlockOverlay = document.getElementById('audio-unlock-overlay');
-
-    initMediaPlaybackUnlock();
+    const audioGestureHint = document.getElementById('audio-gesture-hint');
 
     function hideAudioUnlockOverlay() {
         audioUnlockOverlay.classList.add('hidden');
     }
 
     function showAudioUnlockOverlay() {
-        if (!isMediaPlaybackUnlocked()) {
+        if (mediaPlaybackNeedsGesture()) {
             audioUnlockOverlay.classList.remove('hidden');
         }
     }
@@ -100,10 +101,21 @@
     audioUnlockOverlay.addEventListener('pointerdown', () => {
         unlockMediaPlayback();
         hideAudioUnlockOverlay();
+        audioGestureHint.classList.add('hidden');
     });
 
     setMediaPlaybackBlockedHandler(() => {
         showAudioUnlockOverlay();
+    });
+
+    initMediaPlaybackUnlock({
+        onRequiresGesture() {
+            audioGestureHint.classList.remove('hidden');
+        },
+        onUnlocked() {
+            audioGestureHint.classList.add('hidden');
+            hideAudioUnlockOverlay();
+        },
     });
 
     const STATUS_LABELS = {

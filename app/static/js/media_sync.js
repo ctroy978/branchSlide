@@ -2,9 +2,15 @@ function mediaElement(assetId) {
     return document.getElementById(`asset-${assetId}`);
 }
 
+const SILENT_AUDIO_WAV =
+    'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+
 let mediaPlaybackUnlocked = false;
+let mediaPlaybackRequiresGesture = false;
 const pendingPlayAssetIds = new Set();
 let onPlaybackBlocked = null;
+let onPlaybackUnlocked = null;
+let onPlaybackRequiresGesture = null;
 
 function setMediaPlaybackBlockedHandler(handler) {
     onPlaybackBlocked = handler;
@@ -22,6 +28,9 @@ function unlockMediaPlayback() {
         return;
     }
     mediaPlaybackUnlocked = true;
+    if (onPlaybackUnlocked) {
+        onPlaybackUnlocked();
+    }
     const pending = [...pendingPlayAssetIds];
     pendingPlayAssetIds.clear();
     for (const assetId of pending) {
@@ -29,7 +38,32 @@ function unlockMediaPlayback() {
     }
 }
 
-function initMediaPlaybackUnlock() {
+async function probeMediaPlaybackAllowed() {
+    const probe = new Audio(SILENT_AUDIO_WAV);
+    probe.volume = 0;
+    try {
+        await probe.play();
+        probe.pause();
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+async function initMediaPlaybackUnlock(options = {}) {
+    onPlaybackUnlocked = options.onUnlocked || null;
+    onPlaybackRequiresGesture = options.onRequiresGesture || null;
+
+    if (await probeMediaPlaybackAllowed()) {
+        unlockMediaPlayback();
+        return;
+    }
+
+    mediaPlaybackRequiresGesture = true;
+    if (onPlaybackRequiresGesture) {
+        onPlaybackRequiresGesture();
+    }
+
     const unlock = () => unlockMediaPlayback();
     document.addEventListener('pointerdown', unlock, { once: true, capture: true });
     document.addEventListener('keydown', unlock, { once: true, capture: true });
@@ -37,6 +71,10 @@ function initMediaPlaybackUnlock() {
 
 function isMediaPlaybackUnlocked() {
     return mediaPlaybackUnlocked;
+}
+
+function mediaPlaybackNeedsGesture() {
+    return mediaPlaybackRequiresGesture && !mediaPlaybackUnlocked;
 }
 
 function stopAllMedia() {
